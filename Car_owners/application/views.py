@@ -1,9 +1,10 @@
+import django.utils.datastructures
+
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from django_filters import rest_framework as filters
 
 
@@ -25,16 +26,56 @@ class OwnerViewSet(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ('name', 'surname')
+    filterset_fields = ('name', 'surname', 'phone')
 
-    @action(detail=False, url_path='name')
+    @action(detail=False, url_path='search')
+    def owners_with_the_given_data(self, request):
+
+        try:
+            name = request.GET['name'].title()
+        except django.utils.datastructures.MultiValueDictKeyError:
+            name=''
+
+        try:
+            surname = request.GET['surname'].title()
+        except django.utils.datastructures.MultiValueDictKeyError:
+            surname = ''
+
+        try:
+            phone = f"+{request.GET['phone'].strip()}"
+        except django.utils.datastructures.MultiValueDictKeyError:
+            phone = 0
+
+        if phone:
+            try:
+                owners = Owner.objects.get(phone=phone)
+            except Owner.DoesNotExist:
+                owners = Owner.objects.filter(phone=phone)
+            return check_if_queryset_is_empty(owners, 'owners', 'phone', phone,
+                                          self.get_serializer, many=False)
+        elif name and surname:
+            owners = Owner.objects.filter(name=name, surname=surname)
+            return check_if_queryset_is_empty(owners, 'owners', 'data', name,
+                                              self.get_serializer, many=True)
+        elif name:
+            owners = Owner.objects.filter(name=name)
+            return check_if_queryset_is_empty(owners, 'owners', 'name', name,
+                                              self.get_serializer, many=True)
+        elif surname:
+            owners = Owner.objects.filter(surname=surname)
+            return check_if_queryset_is_empty(owners, 'owners', 'surname', surname,
+                                              self.get_serializer, many=True)
+
+
+
+    @action(detail=False, url_path='')
     def owners_with_the_given_name(self, request):
         name = request.GET['name'].title()
         owners = Owner.objects.filter(name=name)
         return check_if_queryset_is_empty(owners, 'owners', 'name', name,
                                           self.get_serializer, many=True)
 
-    @action(detail=False, url_path='surname')
+    @action(detail=False, url_path='')
     def owners_with_the_given_surname(self, request):
         surname = request.GET['surname'].title()
         owners = Owner.objects.filter(surname=surname)
