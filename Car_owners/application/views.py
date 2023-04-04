@@ -1,21 +1,21 @@
-import django.utils.datastructures
-
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters import rest_framework as filters
+from django.utils.datastructures import MultiValueDictKeyError
 
 
-def check_if_queryset_is_empty(queryset, objects, parameter_to_check,
-        parameter_to_check_input, serializer, many=False):
+def check_if_queryset_is_empty(queryset, objects, parameter_to_check_input,
+                               serializer, *parameter_to_check, many=False):
     if queryset:
         serializer = serializer(queryset, many=many)
         return Response(serializer.data)
-    return Response(f"There are no {objects} with {parameter_to_check}"
-                    f" {parameter_to_check_input}")
 
+    parameters = ' '.join([parameter for parameter in parameter_to_check])
+    return Response(f"There are no {objects} with {parameters}"
+                    f" {parameter_to_check_input}")
 
 class OwnerViewSet(viewsets.ModelViewSet):
     """
@@ -28,60 +28,117 @@ class OwnerViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ('name', 'surname', 'phone')
 
-    @action(detail=False, url_path='search')
-    def owners_with_the_given_data(self, request):
-
+    def try_to_get_parameters_from_request(self, request):
         try:
             name = request.GET['name'].title()
-        except django.utils.datastructures.MultiValueDictKeyError:
+        except MultiValueDictKeyError:
             name=''
-
         try:
             surname = request.GET['surname'].title()
-        except django.utils.datastructures.MultiValueDictKeyError:
+        except MultiValueDictKeyError:
             surname = ''
-
         try:
             phone = f"+{request.GET['phone'].strip()}"
-        except django.utils.datastructures.MultiValueDictKeyError:
+        except MultiValueDictKeyError:
             phone = 0
+
+        return name, surname, phone
+
+    def owner_parameters_search_logic(self, name, surname, phone):
+        if phone:
+            try:
+                owner = Owner.objects.get(phone=phone)
+                if owner.name == name and owner.surname == surname:
+                    owners = owner
+                else:
+                    owners = 0
+                    return check_if_queryset_is_empty(owners, 'owners',
+                                                      'name, surname and phone',
+                                                      self.get_serializer,
+                                                      *[name, surname, phone],
+                                                      many=False)
+
+            except Owner.DoesNotExist:
+                owners = Owner.objects.filter(phone=phone)
+
+            return check_if_queryset_is_empty(owners, 'owners',
+                                              'phone',
+                                              self.get_serializer,
+                                              phone,
+                                              many=False)
+
+        elif name and surname:
+            owners = Owner.objects.filter(name=name, surname=surname)
+            return check_if_queryset_is_empty(owners, 'owners',
+                                              'name and surname',
+                                              self.get_serializer,
+                                              *[name, surname], many=True)
+
+        elif name:
+            owners = Owner.objects.filter(name=name)
+            return check_if_queryset_is_empty(owners, 'owners', 'name',
+                                              self.get_serializer, name,
+                                              many=True)
+
+        elif surname:
+            owners = Owner.objects.filter(surname=surname)
+            return check_if_queryset_is_empty(owners, 'owners', 'surname',
+                                              self.get_serializer, surname,
+                                              many=True)
+
+    # additional action functions.
+    @action(detail=False, url_path='search')
+    def owners_with_the_given_data(self, request):
+        # Try to get parameters from URL request
+        name, surname, phone = \
+            self.try_to_get_parameters_from_request(request)
+
+        # Owner's parameters search and filter logic with responds.
+        #self.owner_parameters_search_logic(name, surname, phone)
 
         if phone:
             try:
-                owners = Owner.objects.get(phone=phone)
+                owner = Owner.objects.get(phone=phone)
+                if owner.name == name and owner.surname == surname:
+                    owners = owner
+                else:
+                    owners = 0
+                    return check_if_queryset_is_empty(owners, 'owners',
+                                                      'name, surname and phone',
+                                                      self.get_serializer,
+                                                      *[name, surname, phone],
+                                                      many=False)
+
             except Owner.DoesNotExist:
                 owners = Owner.objects.filter(phone=phone)
-            return check_if_queryset_is_empty(owners, 'owners', 'phone', phone,
-                                          self.get_serializer, many=False)
+
+            return check_if_queryset_is_empty(owners, 'owners',
+                                              'phone',
+                                              self.get_serializer,
+                                              phone,
+                                              many=False)
+
         elif name and surname:
             owners = Owner.objects.filter(name=name, surname=surname)
-            return check_if_queryset_is_empty(owners, 'owners', 'data', name,
-                                              self.get_serializer, many=True)
+            return check_if_queryset_is_empty(owners, 'owners',
+                                              'name and surname',
+                                              self.get_serializer,
+                                              *[name, surname], many=True)
+
         elif name:
             owners = Owner.objects.filter(name=name)
-            return check_if_queryset_is_empty(owners, 'owners', 'name', name,
-                                              self.get_serializer, many=True)
+            return check_if_queryset_is_empty(owners, 'owners', 'name',
+                                              self.get_serializer, name,
+                                              many=True)
+
         elif surname:
             owners = Owner.objects.filter(surname=surname)
-            return check_if_queryset_is_empty(owners, 'owners', 'surname', surname,
-                                              self.get_serializer, many=True)
+            return check_if_queryset_is_empty(owners, 'owners', 'surname',
+                                              self.get_serializer, surname,
+                                              many=True)
 
 
 
-    @action(detail=False, url_path='')
-    def owners_with_the_given_name(self, request):
-        name = request.GET['name'].title()
-        owners = Owner.objects.filter(name=name)
-        return check_if_queryset_is_empty(owners, 'owners', 'name', name,
-                                          self.get_serializer, many=True)
-
-    @action(detail=False, url_path='')
-    def owners_with_the_given_surname(self, request):
-        surname = request.GET['surname'].title()
-        owners = Owner.objects.filter(surname=surname)
-        return check_if_queryset_is_empty(owners, 'owners', 'surname',
-                                          surname, self.get_serializer,
-                                          many=True)
 
     @action(detail=False,
             url_path=r'(?P<name_or_surname>[name surname]+)/alphabetic')
