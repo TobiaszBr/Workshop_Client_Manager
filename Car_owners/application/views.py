@@ -4,6 +4,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from django_filters import rest_framework as filters
+
 
 def check_if_queryset_is_empty(queryset, objects, parameter_to_check,
         parameter_to_check_input, serializer, many=False):
@@ -71,4 +73,16 @@ class CarViewSet(viewsets.ModelViewSet):
     def cars_in_alphabetic_order(self, request, brand_or_model):
         cars = Car.objects.all().order_by(brand_or_model)
         serializer = self.get_serializer(cars, many=True)
+        return Response(serializer.data)
+
+
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ('brand',)
+
+    @action(detail=False,
+            url_path='test')
+    def test_function(self, request):
+        cars = Car.objects.filter(brand=request.GET['brand'])
+        serializer = self.get_serializer(cars, many=True)
+        print(request.GET['brand'])
         return Response(serializer.data)

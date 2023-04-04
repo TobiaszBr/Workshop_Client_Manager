@@ -1,5 +1,6 @@
 .idea
 venv
-Car_owners/Car_owners/application/__pycache__
-Car_owners/Car_owners/application/migrations/__pycache__
+Car_owners/application/__pycache__/
+
 Car_owners/car_owners/__pycache__
+Car_owners/application/__pycache__
