@@ -85,6 +85,8 @@ class OwnerViewSet(viewsets.ModelViewSet):
             return check_if_queryset_is_empty(owners, 'owners', 'surname',
                                               self.get_serializer, surname,
                                               many=True)
+        else:
+            return Response({'Test text'})
 
     # additional action functions.
     @action(detail=False, url_path='search')
@@ -136,8 +138,8 @@ class OwnerViewSet(viewsets.ModelViewSet):
             return check_if_queryset_is_empty(owners, 'owners', 'surname',
                                               self.get_serializer, surname,
                                               many=True)
-
-
+        else:
+            return Response({'You did not put any parameter to search function.'})
 
 
     @action(detail=False,
