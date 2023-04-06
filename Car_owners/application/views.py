@@ -13,7 +13,7 @@ def check_if_queryset_is_empty(queryset, objects, parameter_to_check_input,
         serializer = serializer(queryset, many=many)
         return Response(serializer.data)
 
-    parameters = ' '.join([parameter for parameter in parameter_to_check])
+    parameters = ' '.join([parameter for parameter in parameter_to_check]).strip()
     return Response(f"There are no {objects} with {parameters}"
                     f" {parameter_to_check_input}")
 
@@ -32,7 +32,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
         try:
             name = request.GET['name'].title()
         except MultiValueDictKeyError:
-            name=''
+            name = ''
         try:
             surname = request.GET['surname'].title()
         except MultiValueDictKeyError:
@@ -44,20 +44,11 @@ class OwnerViewSet(viewsets.ModelViewSet):
 
         return name, surname, phone
 
-    def owner_parameters_search_logic(self, name, surname, phone):
+    # currently function not used
+    """def owner_parameters_search_logic(self, name, surname, phone):
         if phone:
             try:
-                owner = Owner.objects.get(phone=phone)
-                if owner.name == name and owner.surname == surname:
-                    owners = owner
-                else:
-                    owners = 0
-                    return check_if_queryset_is_empty(owners, 'owners',
-                                                      'name, surname and phone',
-                                                      self.get_serializer,
-                                                      *[name, surname, phone],
-                                                      many=False)
-
+                owners = Owner.objects.get(phone=phone)
             except Owner.DoesNotExist:
                 owners = Owner.objects.filter(phone=phone)
 
@@ -87,6 +78,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
                                               many=True)
         else:
             return Response({'Test text'})
+    """
 
     # additional action functions.
     @action(detail=False, url_path='search')
@@ -101,23 +93,27 @@ class OwnerViewSet(viewsets.ModelViewSet):
         if phone:
             try:
                 owner = Owner.objects.get(phone=phone)
-                if owner.name == name and owner.surname == surname:
+                if (not name and not surname or
+                name == owner.name and surname == owner.surname or
+                name == owner.name and not surname or
+                surname == owner.surname and not name
+                ):
                     owners = owner
                 else:
                     owners = 0
-                    return check_if_queryset_is_empty(owners, 'owners',
-                                                      'name, surname and phone',
-                                                      self.get_serializer,
-                                                      *[name, surname, phone],
-                                                      many=False)
-
             except Owner.DoesNotExist:
                 owners = Owner.objects.filter(phone=phone)
 
+
+            name_prompt = 'name ' if name else ''
+            surname_prompt = 'surname ' if surname else ''
+            and_prompt = 'and ' if name or surname else ''
+
             return check_if_queryset_is_empty(owners, 'owners',
-                                              'phone',
+                                              f'{name_prompt}{surname_prompt}'
+                                              f'{and_prompt}phone',
                                               self.get_serializer,
-                                              phone,
+                                              *[name, surname, phone],
                                               many=False)
 
         elif name and surname:
@@ -139,7 +135,8 @@ class OwnerViewSet(viewsets.ModelViewSet):
                                               self.get_serializer, surname,
                                               many=True)
         else:
-            return Response({'You did not put any parameter to search function.'})
+            return Response({'You did not put any parameter to search '
+                             'function.'})
 
 
     @action(detail=False,
