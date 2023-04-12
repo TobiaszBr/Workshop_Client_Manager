@@ -208,11 +208,6 @@ class CarViewSet(viewsets.ModelViewSet):
             return Response({'You did not put any parameter to search '
                              'function.'})
 
-
-
-
-
-
     @action(detail=False, url_path='search')
     def cars_with_the_given_data(self, request):
         # Try to get parameters from URL request
