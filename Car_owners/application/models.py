@@ -20,3 +20,8 @@ class Car(models.Model):
 
     def __str__(self):
         return f'{self.brand} {self.model}'
+
+    def save(self, *args, **kwargs):
+        self.brand = self.brand.title()
+        self.model = self.model.title()
+        super(Car, self).save(*args, **kwargs)

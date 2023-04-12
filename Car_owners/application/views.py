@@ -111,6 +111,10 @@ class OwnerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+
+
+
+
 class CarViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides 'list', 'create', 'retrieve',
@@ -121,19 +125,124 @@ class CarViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ('brand', 'model')
 
-    @action(detail=False, url_path='brand')
+
+
+    def try_to_get_parameters_from_request(self, request):
+        try:
+            brand = request.GET['brand'].title()
+        except MultiValueDictKeyError:
+            brand = ''
+        try:
+            model = request.GET['model'].title()
+        except MultiValueDictKeyError:
+            model = ''
+        try:
+            production_date = request.GET['production_date']
+        except MultiValueDictKeyError:
+            production_date = 0
+
+        return brand, model, production_date
+
+    def car_parameters_search_logic(self, brand, model, production_date):
+
+
+        if brand and model and production_date:
+            cars = Car.objects.filter(brand=brand, model=model,
+                                      production_date = production_date)
+            return check_if_queryset_is_empty(cars, 'car',
+                                              'brand, model and production date',
+                                              self.get_serializer,
+                                              *[brand, model, production_date],
+                                              many=True)
+
+        elif brand and model:
+            cars = Car.objects.filter(brand=brand, model=model)
+            return check_if_queryset_is_empty(cars, 'car',
+                                              'brand and model',
+                                              self.get_serializer,
+                                              *[brand, model], many=True)
+
+        elif brand and production_date:
+            cars = Car.objects.filter(brand=brand,
+                                      production_date=production_date)
+            return check_if_queryset_is_empty(cars, 'car',
+                                              'brand and production date',
+                                              self.get_serializer,
+                                              *[brand, production_date],
+                                              many=True)
+
+        elif model and production_date:
+            cars = Car.objects.filter(model=model,
+                                      production_date=production_date)
+            return check_if_queryset_is_empty(cars, 'car',
+                                              'model and production date',
+                                              self.get_serializer,
+                                              *[model, production_date],
+                                              many=True)
+
+        elif brand:
+            cars = Car.objects.filter(brand=brand)
+            return check_if_queryset_is_empty(cars, 'car', 'brand',
+                                              self.get_serializer, brand,
+                                              many=True)
+
+        elif model:
+            cars = Car.objects.filter(model=model)
+            return check_if_queryset_is_empty(cars, 'car', 'model',
+                                              self.get_serializer, model,
+                                              many=True)
+
+        elif production_date:
+            cars = Car.objects.filter(production_date=production_date)
+            return check_if_queryset_is_empty(cars, 'car', 'production date',
+                                              self.get_serializer,
+                                              production_date, many=True)
+
+        else:
+            return Response({'You did not put any parameter to search '
+                             'function.'})
+
+
+
+
+
+
+    @action(detail=False, url_path='search')
+    def cars_with_the_given_data(self, request):
+        # Try to get parameters from URL request
+        brand, model, production_date = \
+            self.try_to_get_parameters_from_request(request)
+
+        # Car's parameters search and filter logic with responds.
+        return self.car_parameters_search_logic(brand, model, production_date)
+
+
+
+
+
+
+
+    """
+
+    @action(detail=False, url_path='test')
     def cars_with_the_given_brand(self, request):
         brand = request.GET['brand'].title()
         cars = Car.objects.filter(brand=brand)
-        return check_if_queryset_is_empty(cars, 'car', 'brand', brand,
-                                          self.get_serializer, many=True)
+        return check_if_queryset_is_empty(cars, 'car', 'brand',
+                                          self.get_serializer, brand,
+                                          many=True)
 
-    @action(detail=False, url_path='model')
+
+    @action(detail=False, url_path='search/model')
     def cars_with_the_given_model(self, request):
         model = request.GET['model']
         cars = Car.objects.filter(model=model)
-        return check_if_queryset_is_empty(cars, 'car', 'model', model,
-                                          self.get_serializer, many=True)
+        return check_if_queryset_is_empty(cars, 'car', 'model',
+                                          self.get_serializer,  model,
+                                          many=True)
+
+
+    """
 
     @action(detail=False,
             url_path=r'(?P<brand_or_model>[brand model]+)/alphabetic')
