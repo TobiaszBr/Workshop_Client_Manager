@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters import rest_framework as filters
 from django.utils.datastructures import MultiValueDictKeyError
+from django.core.exceptions import ValidationError
 
 
 def check_if_queryset_is_empty(queryset, objects, parameter_to_check_input,
@@ -123,9 +124,7 @@ class CarViewSet(viewsets.ModelViewSet):
     queryset = Car.objects.all()
     serializer_class = CarSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ('brand', 'model')
-
-
+    filterset_fields = ('brand', 'model', 'production_date')
 
     def try_to_get_parameters_from_request(self, request):
         try:
@@ -144,6 +143,13 @@ class CarViewSet(viewsets.ModelViewSet):
         return brand, model, production_date
 
     def car_parameters_search_logic(self, brand, model, production_date):
+
+        # Validate the production date variable
+        if production_date:
+            try:
+                Car.objects.filter(production_date=production_date)
+            except ValidationError as error:
+                return Response({error.messages[0]})
 
 
         if brand and model and production_date:
@@ -217,36 +223,23 @@ class CarViewSet(viewsets.ModelViewSet):
         return self.car_parameters_search_logic(brand, model, production_date)
 
 
-
-
-
-
-
-    """
-
-    @action(detail=False, url_path='test')
-    def cars_with_the_given_brand(self, request):
-        brand = request.GET['brand'].title()
-        cars = Car.objects.filter(brand=brand)
-        return check_if_queryset_is_empty(cars, 'car', 'brand',
-                                          self.get_serializer, brand,
-                                          many=True)
-
-
-    @action(detail=False, url_path='search/model')
-    def cars_with_the_given_model(self, request):
-        model = request.GET['model']
-        cars = Car.objects.filter(model=model)
-        return check_if_queryset_is_empty(cars, 'car', 'model',
-                                          self.get_serializer,  model,
-                                          many=True)
-
-
-    """
-
     @action(detail=False,
             url_path=r'(?P<brand_or_model>[brand model]+)/alphabetic')
     def cars_in_alphabetic_order(self, request, brand_or_model):
         cars = Car.objects.all().order_by(brand_or_model)
+        serializer = self.get_serializer(cars, many=True)
+        return Response(serializer.data)
+
+
+    @action(detail=False,
+            url_path=r'production_date/'
+                     r'(?P<ascending_or_descending>[ascending descending]+)')
+    def cars_in_production_date_order(self, request, ascending_or_descending):
+
+        if ascending_or_descending == 'ascending':
+            cars = Car.objects.all().order_by('production_date')
+        elif ascending_or_descending == 'descending':
+            cars = Car.objects.all().order_by('-production_date')
+
         serializer = self.get_serializer(cars, many=True)
         return Response(serializer.data)
