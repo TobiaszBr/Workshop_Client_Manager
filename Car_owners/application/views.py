@@ -14,7 +14,7 @@ def check_if_queryset_is_empty(queryset, objects, parameter_to_check_input,
         return Response(serializer.data)
 
     parameters = ' '.join([parameter for parameter in parameter_to_check]).strip()
-    return Response(f"There are no {objects} with {parameters}"
+    return Response(f"There is no {objects} with {parameters}"
                     f" {parameter_to_check_input}")
 
 class OwnerViewSet(viewsets.ModelViewSet):
@@ -44,52 +44,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
 
         return name, surname, phone
 
-    # currently function not used
-    """def owner_parameters_search_logic(self, name, surname, phone):
-        if phone:
-            try:
-                owners = Owner.objects.get(phone=phone)
-            except Owner.DoesNotExist:
-                owners = Owner.objects.filter(phone=phone)
-
-            return check_if_queryset_is_empty(owners, 'owners',
-                                              'phone',
-                                              self.get_serializer,
-                                              phone,
-                                              many=False)
-
-        elif name and surname:
-            owners = Owner.objects.filter(name=name, surname=surname)
-            return check_if_queryset_is_empty(owners, 'owners',
-                                              'name and surname',
-                                              self.get_serializer,
-                                              *[name, surname], many=True)
-
-        elif name:
-            owners = Owner.objects.filter(name=name)
-            return check_if_queryset_is_empty(owners, 'owners', 'name',
-                                              self.get_serializer, name,
-                                              many=True)
-
-        elif surname:
-            owners = Owner.objects.filter(surname=surname)
-            return check_if_queryset_is_empty(owners, 'owners', 'surname',
-                                              self.get_serializer, surname,
-                                              many=True)
-        else:
-            return Response({'Test text'})
-    """
-
-    # additional action functions.
-    @action(detail=False, url_path='search')
-    def owners_with_the_given_data(self, request):
-        # Try to get parameters from URL request
-        name, surname, phone = \
-            self.try_to_get_parameters_from_request(request)
-
-        # Owner's parameters search and filter logic with responds.
-        #self.owner_parameters_search_logic(name, surname, phone)
-
+    def owner_parameters_search_logic(self, name, surname, phone):
         if phone:
             try:
                 owner = Owner.objects.get(phone=phone)
@@ -109,7 +64,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
             surname_prompt = 'surname ' if surname else ''
             and_prompt = 'and ' if name or surname else ''
 
-            return check_if_queryset_is_empty(owners, 'owners',
+            return check_if_queryset_is_empty(owners, 'owner',
                                               f'{name_prompt}{surname_prompt}'
                                               f'{and_prompt}phone',
                                               self.get_serializer,
@@ -118,26 +73,35 @@ class OwnerViewSet(viewsets.ModelViewSet):
 
         elif name and surname:
             owners = Owner.objects.filter(name=name, surname=surname)
-            return check_if_queryset_is_empty(owners, 'owners',
+            return check_if_queryset_is_empty(owners, 'owner',
                                               'name and surname',
                                               self.get_serializer,
                                               *[name, surname], many=True)
 
         elif name:
             owners = Owner.objects.filter(name=name)
-            return check_if_queryset_is_empty(owners, 'owners', 'name',
+            return check_if_queryset_is_empty(owners, 'owner', 'name',
                                               self.get_serializer, name,
                                               many=True)
 
         elif surname:
             owners = Owner.objects.filter(surname=surname)
-            return check_if_queryset_is_empty(owners, 'owners', 'surname',
+            return check_if_queryset_is_empty(owners, 'owner', 'surname',
                                               self.get_serializer, surname,
                                               many=True)
         else:
             return Response({'You did not put any parameter to search '
                              'function.'})
 
+    # additional action functions.
+    @action(detail=False, url_path='search')
+    def owners_with_the_given_data(self, request):
+        # Try to get parameters from URL request
+        name, surname, phone = \
+            self.try_to_get_parameters_from_request(request)
+
+        # Owner's parameters search and filter logic with responds.
+        return self.owner_parameters_search_logic(name, surname, phone)
 
     @action(detail=False,
             url_path=r'(?P<name_or_surname>[name surname]+)/alphabetic')
@@ -161,14 +125,14 @@ class CarViewSet(viewsets.ModelViewSet):
     def cars_with_the_given_brand(self, request):
         brand = request.GET['brand'].title()
         cars = Car.objects.filter(brand=brand)
-        return check_if_queryset_is_empty(cars, 'cars', 'brand', brand,
+        return check_if_queryset_is_empty(cars, 'car', 'brand', brand,
                                           self.get_serializer, many=True)
 
     @action(detail=False, url_path='model')
     def cars_with_the_given_model(self, request):
         model = request.GET['model']
         cars = Car.objects.filter(model=model)
-        return check_if_queryset_is_empty(cars, 'cars', 'model', model,
+        return check_if_queryset_is_empty(cars, 'car', 'model', model,
                                           self.get_serializer, many=True)
 
     @action(detail=False,
