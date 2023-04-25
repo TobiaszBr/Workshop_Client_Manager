@@ -112,10 +112,6 @@ class OwnerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-
-
-
-
 class CarViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides 'list', 'create', 'retrieve',
