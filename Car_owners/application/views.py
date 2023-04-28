@@ -3,7 +3,6 @@ from .serializers import OwnerSerializer, CarSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django_filters import rest_framework as filters
 from django.utils.datastructures import MultiValueDictKeyError
 from django.core.exceptions import ValidationError
 
@@ -26,8 +25,6 @@ class OwnerViewSet(viewsets.ModelViewSet):
 
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ('name', 'surname', 'phone')
 
     def try_to_get_parameters_from_request(self, request):
         try:
@@ -119,8 +116,6 @@ class CarViewSet(viewsets.ModelViewSet):
     """
     queryset = Car.objects.all()
     serializer_class = CarSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ('brand', 'model', 'production_date')
 
     def try_to_get_parameters_from_request(self, request):
         try:
