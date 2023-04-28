@@ -135,10 +135,14 @@ class CarViewSet(viewsets.ModelViewSet):
             production_date = request.GET['production_date']
         except MultiValueDictKeyError:
             production_date = 0
+        try:
+            owner = request.GET['owner_id']
+        except MultiValueDictKeyError:
+            owner = ''
 
-        return brand, model, production_date
+        return brand, model, production_date, owner
 
-    def car_parameters_search_logic(self, brand, model, production_date):
+    def car_parameters_search_logic(self, brand, model, production_date, owner):
 
         # Validate the production date variable
         if production_date:
@@ -146,6 +150,13 @@ class CarViewSet(viewsets.ModelViewSet):
                 Car.objects.filter(production_date=production_date)
             except ValidationError as error:
                 return Response({error.messages[0]})
+
+        # Validate the owner variable
+        if owner:
+            try:
+                Car.objects.filter(owner=int(owner))
+            except ValueError:
+                return Response({'Owner id must be a number.'})
 
 
         if brand and model and production_date:
@@ -200,6 +211,12 @@ class CarViewSet(viewsets.ModelViewSet):
                                               self.get_serializer,
                                               production_date, many=True)
 
+        elif owner:
+            cars = Car.objects.filter(owner=int(owner))
+            return check_if_queryset_is_empty(cars, 'car', 'owner id',
+                                              self.get_serializer, owner,
+                                              many=True)
+
         else:
             return Response({'You did not put any parameter to search '
                              'function.'})
@@ -207,11 +224,12 @@ class CarViewSet(viewsets.ModelViewSet):
     @action(detail=False, url_path='search')
     def cars_with_the_given_data(self, request):
         # Try to get parameters from URL request
-        brand, model, production_date = \
+        brand, model, production_date, owner = \
             self.try_to_get_parameters_from_request(request)
 
         # Car's parameters search and filter logic with responds.
-        return self.car_parameters_search_logic(brand, model, production_date)
+        return self.car_parameters_search_logic(brand, model, production_date,
+                                                owner)
 
 
     @action(detail=False,

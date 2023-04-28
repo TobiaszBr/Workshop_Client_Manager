@@ -14,11 +14,12 @@ Working URLs with short description:
 11. http://localhost:8000/cars/                                                                      -> list of all cars
 12. http://localhost:8000/cars/1/                                                                    -> view of car's details
 13. http://localhost:8000/cars/search/                                                               -> lack of search parameters prompt view
-14. http://localhost:8000/cars/search/?brand=Brand                                                   -> list of all cars with brand 'Brand' - manage letters' size error (could be Brand, brand, bRanD etc). If brand contains more than one word, just use spacebar
-15. http://localhost:8000/cars/search/?model=Model                                                   -> list of all cars with model 'Model' - manage letters' size error (could be Model, model, mOdeL etc). If model contains more than one word, just use spacebar
-16. http://localhost:8000/cars/search/?production_date=YYYY-MM-DD                                    -> list of all cars with production date YYYY-MM-DD' - manage wrong format error.
-17. http://localhost:8000/cars/search/?brand=Brand&model=Model&production_date=YYYY-MM-DD            -> possibility of using all search parameters configurations
-18. http://localhost:8000/cars/brand/alphabetic                                                      -> list of cars in brand alphabetic order
-19. http://localhost:8000/cars/model/alphabetic/                                                     -> list of cars in model alphabetic order
-20. http://localhost:8000/cars/production_date/ascending                                             -> list of cars in production date ascending order
-21. http://localhost:8000/cars/production_date/descending                                            -> list of cars in production date descending order
+14. http://localhost:8000/cars/search/?owner_id=1                                                    -> list of all cars for particular owner
+15. http://localhost:8000/cars/search/?brand=Brand                                                   -> list of all cars with brand 'Brand' - manage letters' size error (could be Brand, brand, bRanD etc). If brand contains more than one word, just use spacebar
+16. http://localhost:8000/cars/search/?model=Model                                                   -> list of all cars with model 'Model' - manage letters' size error (could be Model, model, mOdeL etc). If model contains more than one word, just use spacebar
+17. http://localhost:8000/cars/search/?production_date=YYYY-MM-DD                                    -> list of all cars with production date YYYY-MM-DD' - manage wrong format error.
+18. http://localhost:8000/cars/search/?brand=Brand&model=Model&production_date=YYYY-MM-DD            -> possibility of using all search parameters configurations
+19. http://localhost:8000/cars/brand/alphabetic                                                      -> list of cars in brand alphabetic order
+20. http://localhost:8000/cars/model/alphabetic/                                                     -> list of cars in model alphabetic order
+21. http://localhost:8000/cars/production_date/ascending                                             -> list of cars in production date ascending order
+22. http://localhost:8000/cars/production_date/descending                                            -> list of cars in production date descending order
