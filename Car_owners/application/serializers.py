@@ -3,10 +3,10 @@ from rest_framework import serializers
 import datetime
 
 
-class OwnerSerializer(serializers.HyperlinkedModelSerializer):
+class OwnerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Owner
-        fields = ['url', 'id', 'name', 'surname', 'phone']
+        fields = ['id', 'name', 'surname', 'phone']
 
     def validate(self, data):
         """
@@ -22,10 +22,10 @@ class OwnerSerializer(serializers.HyperlinkedModelSerializer):
         return data
 
 
-class CarSerializer(serializers.HyperlinkedModelSerializer):
+class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = ['url', 'id','brand', 'model', 'production_date', 'owner']
+        fields = ['id','brand', 'model', 'production_date', 'owner']
 
     def validate(self, data):
         """
