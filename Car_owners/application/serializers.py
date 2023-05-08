@@ -6,32 +6,37 @@ import datetime
 class OwnerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Owner
-        fields = ['id', 'name', 'surname', 'phone']
+        fields = ["id", "name", "surname", "phone"]
 
     def validate(self, data):
         """
         Checks if name and surname contain only letters.
         """
 
-        if not data['name'].isalpha():
+        # I don't like this validation, my name is Kazimierz Przerwa-Tetmajer
+
+        if not data["name"].isalpha():
             raise serializers.ValidationError(
-            {'name': 'Name can contain only letters without whitespaces.'})
-        elif not data['surname'].isalpha():
+                {"name": "Name can contain only letters without whitespaces."}
+            )
+        elif not data["surname"].isalpha():
             raise serializers.ValidationError(
-        {'surname': 'Surname can contain only letters without whitespaces.'})
+                {"surname": "Surname can contain only letters without whitespaces."}
+            )
         return data
 
 
 class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = ['id','brand', 'model', 'production_date', 'owner']
+        fields = ["id", "brand", "model", "production_date", "owner"]
 
     def validate(self, data):
         """
         Checks that production date is not from the future.
         """
-        if data['production_date'] > datetime.date.today():
+        if data["production_date"] > datetime.date.today():
             raise serializers.ValidationError(
-            {'production_date': 'Production date cannot be from the future.'})
+                {"production_date": "Production date cannot be from the future."}
+            )
         return data

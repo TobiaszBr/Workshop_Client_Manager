@@ -20,12 +20,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-=ok6&fsow=(^4(&&$k=45eda5%d37*!s6xf78jx9wz&&g#6h6-"
+SECRET_KEY = "django-insecure-=ok6&fsow=(^4(&&$k=45eda5%d37*!s6xf78jx9wz&&g#6h6-"  # this should not be kept inside repository code but in git secrets
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# It's a good idea to have prod_settings.py and local_settings.py for prod and dev environments
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "*"
+]  # you can try to prepare for future separate frontend app here, read about cors and ssl
 
 
 # Application definition
@@ -39,7 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "application",
     "rest_framework",
-    "phonenumber_field"
+    "phonenumber_field",
 ]
 
 MIDDLEWARE = [
@@ -78,7 +81,7 @@ WSGI_APPLICATION = "car_owners.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
+        "ENGINE": "django.db.backends.sqlite3",  # as a next step I suggest to implement postgresql db
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
@@ -124,3 +127,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False

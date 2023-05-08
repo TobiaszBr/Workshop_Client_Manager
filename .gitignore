@@ -4,3 +4,5 @@ Car_owners/application/__pycache__/
 
 Car_owners/car_owners/__pycache__
 Car_owners/application/__pycache__
+
+*.pyc

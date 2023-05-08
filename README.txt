@@ -1,3 +1,6 @@
+Readme should have information about how to run the app locally.
+All the URLs are listed in the app's swagger - if it's implemented (should be)
+
 Working URLs with short description:
 
 1. http://localhost:8000/                                                                            -> root screen
