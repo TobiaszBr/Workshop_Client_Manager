@@ -1,6 +1,7 @@
-from .models import Owner, Car
-from rest_framework import serializers
 import datetime
+from re import search
+from rest_framework import serializers
+from .models import Owner, Car
 
 
 class OwnerSerializer(serializers.ModelSerializer):
@@ -10,19 +11,14 @@ class OwnerSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Checks if name and surname contain only letters.
+        Checks if name and surname contain only letters and '-'.
         """
 
-        # I don't like this validation, my name is Kazimierz Przerwa-Tetmajer
-
-        if not data["name"].isalpha():
-            raise serializers.ValidationError(
-                {"name": "Name can contain only letters without whitespaces."}
-            )
-        elif not data["surname"].isalpha():
-            raise serializers.ValidationError(
-                {"surname": "Surname can contain only letters without whitespaces."}
-            )
+        error_text = "Field can contain only letters and '-' without whitespaces."
+        if search("[^a-zA-Z-]", data["name"]):
+            raise serializers.ValidationError({"name": error_text})
+        elif search("[^a-zA-Z-]", data["surname"]):
+            raise serializers.ValidationError({"surname": error_text})
         return data
 
 
