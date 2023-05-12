@@ -4,8 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
-
-
+from re import search
 
 
 class OwnerViewSet(viewsets.ModelViewSet):
@@ -15,19 +14,19 @@ class OwnerViewSet(viewsets.ModelViewSet):
     """
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
-
-    # a really good habit, especially since python 3.10 is typing. https://docs.python.org/3/library/typing.html
-    def get_parameters_from_request(self, request):
+                                                                                         # a really good habit, especially since python 3.10 is typing. https://docs.python.org/3/library/typing.html
+    def get_parameters_from_request(self, request, *elements_to_capitalize_list):
         request_data_dict = {}
         for item in request.query_params:
-            if item == "name" or item == "surname":
+            if item in elements_to_capitalize_list:
                 request_data_dict[item] = request.query_params[item].capitalize().strip()
             else:
                 request_data_dict[item] = request.query_params[item].strip()
 
         return request_data_dict
 
-    def respond_when_no_owner_found(self, request_data_dict):
+
+    def response_when_no_owner_found(self, request_data_dict):
         respond = "There is no owner with"
         for key, value in request_data_dict.items():
             respond += f" {key}: {value}"
@@ -38,34 +37,22 @@ class OwnerViewSet(viewsets.ModelViewSet):
     @action(detail=False, url_path="search")
     def owners_with_the_given_data(self, request):
         # Get parameters from URL request
-        request_data_dict = self.get_parameters_from_request(request)
+        request_data_dict = self.get_parameters_from_request(request, "name", "surname")
 
-        # Owner's parameters search and filter logic with responds.
+        # Filters owners with given data and respond.
         owners = Owner.objects.filter(**request_data_dict)
         serializer = self.get_serializer(owners, many=True)
-        # owners.exists() do zapytania czy może zostać samo owners - jaka różnica
+                                                                                            # owners.exists() do zapytania czy może zostać samo owners - jaka różnica
         if owners:
             return Response(serializer.data)
         else:
-            return self.respond_when_no_owner_found(request_data_dict)
+            return self.response_when_no_owner_found(request_data_dict)
 
-        # Owner's parameters search and filter logic with responds.
-        #return self.owner_parameters_search_logic(request_data_dict)
-
-
-
-
-    # To zostaje
     @action(detail=False, url_path=r"(?P<name_or_surname>[name surname]+)/alphabetic")
     def owners_in_alphabetic_order(self, request, name_or_surname):
         owners = Owner.objects.all().order_by(name_or_surname)
         serializer = self.get_serializer(owners, many=True)
         return Response(serializer.data)
-
-
-
-
-
 
 
 class CarViewSet(viewsets.ModelViewSet):
@@ -77,126 +64,48 @@ class CarViewSet(viewsets.ModelViewSet):
     queryset = Car.objects.all()
     serializer_class = CarSerializer
 
-    def get_parameters_from_request(self, request): # all of my comments from OwnerViewSet also apply to this class. But you should see many repetitions of code that looks exactly the same. Make use of the fact it's OOP and use inheritance + mixins
-        try:
-            brand = request.GET["brand"].title()
-        except MultiValueDictKeyError:
-            brand = ""
-        try:
-            model = request.GET["model"].title()
-        except MultiValueDictKeyError:
-            model = ""
-        try:
-            production_date = request.GET["production_date"]
-        except MultiValueDictKeyError:
-            production_date = 0
-        try:
-            owner = request.GET["owner_id"] # name the variable owner_id then
-        except MultiValueDictKeyError:
-            owner = ""
+    # all of my comments from OwnerViewSet also apply to this class. But you should see many repetitions of code that looks exactly the same. Make use of the fact it's OOP and use inheritance + mixins
 
-        return brand, model, production_date, owner
+    # To samo co w owners
+    def get_parameters_from_request(self, request, *elements_to_capitalize_list):
+        request_data_dict = {}
+        for item in request.query_params:
+            if item in elements_to_capitalize_list:
+                request_data_dict[item] = request.query_params[item].capitalize().strip()
+            else:
+                request_data_dict[item] = request.query_params[item].strip()
 
-    def car_parameters_search_logic(self, brand, model, production_date, owner):
-        # Validate the production date variable
-        if production_date:
-            try:
-                Car.objects.filter(production_date=production_date)
-            except ValidationError as error:
-                return Response({error.messages[0]})
+        return request_data_dict
 
-        # Validate the owner variable
-        if owner:
-            try:
-                Car.objects.filter(owner=int(owner))
-            except ValueError:
-                return Response({"Owner id must be a number."}) # line 156 says otherwise ;)
+    # To samo co w owners
+    def response_when_no_owner_found(self, request_data_dict):
+        respond = "There is no owner with"
+        for key, value in request_data_dict.items():
+            respond += f" {key}: {value}"
 
-        if brand and model and production_date:
-            cars = Car.objects.filter(
-                brand=brand, model=model, production_date=production_date
-            )
-            return check_if_queryset_is_empty(
-                cars,
-                "car",
-                "brand, model and production date",
-                self.get_serializer,
-                *[brand, model, production_date],
-                many=True,
-            )
-
-        elif brand and model:
-            cars = Car.objects.filter(brand=brand, model=model)
-            return check_if_queryset_is_empty(
-                cars,
-                "car",
-                "brand and model",
-                self.get_serializer,
-                *[brand, model],
-                many=True,
-            )
-
-        elif brand and production_date:
-            cars = Car.objects.filter(brand=brand, production_date=production_date)
-            return check_if_queryset_is_empty(
-                cars,
-                "car",
-                "brand and production date",
-                self.get_serializer,
-                *[brand, production_date],
-                many=True,
-            )
-
-        elif model and production_date:
-            cars = Car.objects.filter(model=model, production_date=production_date)
-            return check_if_queryset_is_empty(
-                cars,
-                "car",
-                "model and production date",
-                self.get_serializer,
-                *[model, production_date],
-                many=True,
-            )
-
-        elif brand:
-            cars = Car.objects.filter(brand=brand)
-            return check_if_queryset_is_empty(
-                cars, "car", "brand", self.get_serializer, brand, many=True
-            )
-
-        elif model:
-            cars = Car.objects.filter(model=model)
-            return check_if_queryset_is_empty(
-                cars, "car", "model", self.get_serializer, model, many=True
-            )
-
-        elif production_date:
-            cars = Car.objects.filter(production_date=production_date)
-            return check_if_queryset_is_empty(
-                cars,
-                "car",
-                "production date",
-                self.get_serializer,
-                production_date,
-                many=True,
-            )
-
-        elif owner:
-            cars = Car.objects.filter(owner=int(owner))
-            return check_if_queryset_is_empty(
-                cars, "car", "owner id", self.get_serializer, owner, many=True
-            )
-
-        else:
-            return Response({"You did not put any parameter to search " "function."})
+        return Response(f"{respond}.")
 
     @action(detail=False, url_path="search")
     def cars_with_the_given_data(self, request):
-        # Try to get parameters from URL request
-        brand, model, production_date, owner = self.get_parameters_from_request(request)
+        # Get parameters from URL request
+        request_data_dict = self.get_parameters_from_request(request, "brand")
 
-        # Car's parameters search and filter logic with responds.
-        return self.car_parameters_search_logic(brand, model, production_date, owner)
+
+        # Data validation
+        # Validate the production date variable
+        if not search("[\d][\d][\d][\d][-][\d][\d][-][\d][\d]", request_data_dict.get("production_date", "2000-01-01")):
+            return Response({"Date must be in YYYY-MM-DD format."})
+
+
+        # Filters owners with given data and respond.
+        cars = Car.objects.filter(**request_data_dict)
+        serializer = self.get_serializer(cars, many=True)
+        # owners.exists() do zapytania czy może zostać samo owners - jaka różnica
+        if cars:
+            return Response(serializer.data)
+        else:
+            return self.response_when_no_owner_found(request_data_dict)
+
 
     @action(detail=False, url_path=r"(?P<brand_or_model>[brand model]+)/alphabetic")
     def cars_in_alphabetic_order(self, request, brand_or_model):
