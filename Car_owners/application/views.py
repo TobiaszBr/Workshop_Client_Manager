@@ -1,12 +1,9 @@
-from .models import Owner, Car
-from .serializers import OwnerSerializer, CarSerializer
+from django.core.exceptions import ValidationError
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.utils.datastructures import MultiValueDictKeyError
-from django.core.exceptions import (
-    ValidationError,
-)  # read about ordering of imports in python
+from .models import Owner, Car
+from .serializers import OwnerSerializer, CarSerializer
 
 
 def check_if_queryset_is_empty(
@@ -37,20 +34,11 @@ class OwnerViewSet(viewsets.ModelViewSet):
     serializer_class = OwnerSerializer
 
     def get_parameters_from_request(self, request):
-        try:
-            name = request.GET[
-                "name"
-            ].title()  # read request object to variable and use regular python .get() method, it allows for default values etc. You will get rid of these custom error handling. Or use request.GET.get()
-        except MultiValueDictKeyError:
-            name = ""
-        try:
-            surname = request.GET["surname"].title()
-        except MultiValueDictKeyError:
-            surname = ""
-        try:
-            phone = f"+{request.GET['phone'].strip()}"
-        except MultiValueDictKeyError:
-            phone = 0  # this screams "there is no validation for phone field in app if we let it be one digit"
+
+        name = request.GET.get("name", "").capitalize().strip()
+        surname = request.GET.get("surname", "").capitalize().strip()
+        phone = "+" + request.GET.get("phone", "").strip()       # this screams "there is no validation for phone field in app if we let it be one digit"
+
 
         return name, surname, phone
 
@@ -121,11 +109,20 @@ class OwnerViewSet(viewsets.ModelViewSet):
         # Owner's parameters search and filter logic with responds.
         return self.owner_parameters_search_logic(name, surname, phone)
 
+
+
+
+    # To zostaje
     @action(detail=False, url_path=r"(?P<name_or_surname>[name surname]+)/alphabetic")
     def owners_in_alphabetic_order(self, request, name_or_surname):
         owners = Owner.objects.all().order_by(name_or_surname)
         serializer = self.get_serializer(owners, many=True)
         return Response(serializer.data)
+
+
+
+
+
 
 
 class CarViewSet(viewsets.ModelViewSet):
