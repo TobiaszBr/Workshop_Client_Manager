@@ -16,6 +16,7 @@ class OwnerViewSet(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
 
+    # a really good habit, especially since python 3.10 is typing. https://docs.python.org/3/library/typing.html
     def get_parameters_from_request(self, request):
         request_data_dict = {}
         for item in request.query_params:
@@ -26,17 +27,12 @@ class OwnerViewSet(viewsets.ModelViewSet):
 
         return request_data_dict
 
-    def owner_parameters_search_logic(self, request_data_dict): # a really good habit, especially since python 3.10 is typing. https://docs.python.org/3/library/typing.html
+    def respond_when_no_owner_found(self, request_data_dict):
+        respond = "There is no owner with"
+        for key, value in request_data_dict.items():
+            respond += f" {key}: {value}"
 
-        owners = Owner.objects.filter(**request_data_dict)
-        serializer = self.get_serializer(owners, many=True)
-        # owners.exists() do zapytania czy może zostać samo owners - jaka różnica
-        if owners:
-            return Response(serializer.data)
-        else:
-            return Response("There is no owner with given data.")
-
-
+        return Response(f"{respond}.")
 
     # additional action functions.
     @action(detail=False, url_path="search")
@@ -45,7 +41,16 @@ class OwnerViewSet(viewsets.ModelViewSet):
         request_data_dict = self.get_parameters_from_request(request)
 
         # Owner's parameters search and filter logic with responds.
-        return self.owner_parameters_search_logic(request_data_dict)
+        owners = Owner.objects.filter(**request_data_dict)
+        serializer = self.get_serializer(owners, many=True)
+        # owners.exists() do zapytania czy może zostać samo owners - jaka różnica
+        if owners:
+            return Response(serializer.data)
+        else:
+            return self.respond_when_no_owner_found(request_data_dict)
+
+        # Owner's parameters search and filter logic with responds.
+        #return self.owner_parameters_search_logic(request_data_dict)
 
 
 
