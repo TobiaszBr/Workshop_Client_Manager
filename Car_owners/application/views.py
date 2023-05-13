@@ -16,8 +16,9 @@ class BaseViewSet(viewsets.ModelViewSet):
 
     elements_to_capitalize_list = []
     model_class_name = "object"
-    model_class = Owner
+    model_class = Owner                                                                     # Tu do zastanowienia co dać jako domyślny model (może zrobić nowy model w models.py Dummy?
     additional_validation = False
+    bases_of_alphabetical_order_list = []
 
     def get_parameters_from_request(self, request):
         request_data_dict = {}
@@ -42,7 +43,7 @@ class BaseViewSet(viewsets.ModelViewSet):
 
     # additional action functions.
     @action(detail=False, url_path="search")
-    def object_with_the_given_data(self, request):
+    def objects_with_the_given_data(self, request):
         # Get parameters from URL request
         request_data_dict = self.get_parameters_from_request(request)
 
@@ -60,6 +61,19 @@ class BaseViewSet(viewsets.ModelViewSet):
         else:
             return self.response_when_no_object_found(request_data_dict)
 
+    @action(detail=False, url_path="alphabetical")
+    def objects_in_alphabetical_order(self, request):
+        if request.query_params:
+            base_of_alphabetical_order = list(request.query_params.keys())[0]
+            if base_of_alphabetical_order in self.bases_of_alphabetical_order_list:
+                query_set = self.model_class.objects.all().order_by(base_of_alphabetical_order)
+                serializer = self.get_serializer(query_set, many=True)
+                return Response(serializer.data)
+            else:
+                return Response({"You cannot alphabetically sort by given data."})
+        else:
+            return Response({"Type parameter based on which you would like to sort."})
+
 
 class OwnerViewSet(BaseViewSet):
 
@@ -69,12 +83,7 @@ class OwnerViewSet(BaseViewSet):
     elements_to_capitalize_list = ["name", "surname"]
     model_class_name = "owner"
     model_class = Owner
-
-    @action(detail=False, url_path=r"(?P<name_or_surname>[name surname]+)/alphabetic")
-    def owners_in_alphabetic_order(self, request, name_or_surname):
-        owners = Owner.objects.all().order_by(name_or_surname)
-        serializer = self.get_serializer(owners, many=True)
-        return Response(serializer.data)
+    bases_of_alphabetical_order_list = ["name", "surname"]
 
 
 class CarViewSet(BaseViewSet):
@@ -86,6 +95,7 @@ class CarViewSet(BaseViewSet):
     model_class_name = "car"
     model_class = Car
     additional_validation = True
+    bases_of_alphabetical_order_list = ["brand", "model"]
 
     def additional_validation_check(self, request_data_dict):
         # Validate the production date variable
@@ -95,12 +105,6 @@ class CarViewSet(BaseViewSet):
         return False, Response({""})
 
 
-
-    @action(detail=False, url_path=r"(?P<brand_or_model>[brand model]+)/alphabetic")
-    def cars_in_alphabetic_order(self, request, brand_or_model):
-        cars = Car.objects.all().order_by(brand_or_model)
-        serializer = self.get_serializer(cars, many=True)
-        return Response(serializer.data)
 
     @action(
         detail=False,
