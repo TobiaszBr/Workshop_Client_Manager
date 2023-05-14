@@ -24,19 +24,21 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         self.additional_validation = False
         self.bases_of_alphabetical_order_list = []
 
-    def get_parameters_from_request(self, request):
+    def get_parameters_from_request(self, request, change_first_char_case):
         request_data_dict = {}
         for item in request.query_params:
-            if item in self.elements_to_capitalize_list:
-                request_data_dict[item] = request.query_params[item].capitalize().strip()           # Tu się zastanowić co ma być capitalize a co nie
+            if change_first_char_case and item in self.elements_to_capitalize_list:
+                data = list(request.query_params[item].strip())
+                data[0] = data[0].swapcase()
+                request_data_dict[item] = "".join(data)
             else:
                 request_data_dict[item] = request.query_params[item].strip()
 
         return request_data_dict
 
-    def response_when_no_object_found(self, request_data_dict):
+    def response_when_no_object_found(self, request):
         respond = f"There is no {self.model_class_name} with"
-        for key, value in request_data_dict.items():
+        for key, value in request.query_params.items():
             respond += f" {key}: {value}"
 
         return Response(f"{respond}.")
@@ -47,9 +49,9 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
     # additional action functions.
     @action(detail=False, url_path="search")
-    def objects_with_the_given_data(self, request):
+    def objects_with_the_given_data(self, request, change_first_char_case=False):
         # Get parameters from URL request
-        request_data_dict = self.get_parameters_from_request(request)
+        request_data_dict = self.get_parameters_from_request(request, change_first_char_case)
 
         # Additional validation
         validation_error, response = self.additional_validation_check(request_data_dict)
@@ -59,11 +61,19 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         # Filters objects with given data and respond.
         query_set = self.model_class.objects.filter(**request_data_dict)
         serializer = self.get_serializer(query_set, many=True)
-                                                                                            # objects.exists() do zapytania czy może zostać samo owners - jaka różnica - może object or 404 poszukaj?
+
+        # I tried to use get_list_or_404 from django.shortcuts and it partially worked,
+        # but I didn't like the way it worked - when the query_set is empty I would like
+        # to use my own response_when_no_object_found function instead of
+        # {
+        #    "detail" = "Not found"
+        #}
         if query_set:
             return Response(serializer.data)
+        elif not change_first_char_case:
+            return self.objects_with_the_given_data(request, change_first_char_case=True)
         else:
-            return self.response_when_no_object_found(request_data_dict)
+            return self.response_when_no_object_found(request)
 
     @action(detail=False, url_path="alphabetical")
     def objects_in_alphabetical_order(self, request):
@@ -98,7 +108,7 @@ class CarViewSet(BaseViewSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.elements_to_capitalize_list = ["brand"]
+        self.elements_to_capitalize_list = ["brand", "model"]
         self.model_class_name = "car"
         self.model_class = Car
         self.additional_validation = True
