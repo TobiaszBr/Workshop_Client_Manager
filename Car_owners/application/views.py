@@ -1,30 +1,34 @@
-from django.core.exceptions import ValidationError
+from abc import ABC
+from re import search
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
-from re import search
+
 
 # a really good habit, especially since python 3.10 is typing. https://docs.python.org/3/library/typing.html
 
-class BaseViewSet(viewsets.ModelViewSet):
+class BaseViewSet(ABC, viewsets.ModelViewSet):
     """
         This viewset automatically provides 'list', 'create', 'retrieve',
         'update', and 'destroy' actions.
     """
 
-    elements_to_capitalize_list = []
-    model_class_name = "object"
-    model_class = Owner                                                                     # Tu do zastanowienia co dać jako domyślny model (może zrobić nowy model w models.py Dummy?
-    additional_validation = False
-    bases_of_alphabetical_order_list = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.elements_to_capitalize_list = []
+        self.model_class_name = "object"
+        self.model_class = None
+        self.additional_validation = False
+        self.bases_of_alphabetical_order_list = []
 
     def get_parameters_from_request(self, request):
         request_data_dict = {}
         for item in request.query_params:
             if item in self.elements_to_capitalize_list:
-                request_data_dict[item] = request.query_params[item].capitalize().strip()
+                request_data_dict[item] = request.query_params[item].capitalize().strip()           # Tu się zastanowić co ma być capitalize a co nie
             else:
                 request_data_dict[item] = request.query_params[item].strip()
 
@@ -55,7 +59,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         # Filters objects with given data and respond.
         query_set = self.model_class.objects.filter(**request_data_dict)
         serializer = self.get_serializer(query_set, many=True)
-                                                                                            # objects.exists() do zapytania czy może zostać samo owners - jaka różnica
+                                                                                            # objects.exists() do zapytania czy może zostać samo owners - jaka różnica - może object or 404 poszukaj?
         if query_set:
             return Response(serializer.data)
         else:
@@ -66,7 +70,8 @@ class BaseViewSet(viewsets.ModelViewSet):
         if request.query_params:
             base_of_alphabetical_order = list(request.query_params.keys())[0]
             if base_of_alphabetical_order in self.bases_of_alphabetical_order_list:
-                query_set = self.model_class.objects.all().order_by(base_of_alphabetical_order)
+                query_set = self.model_class.objects.all().order_by(
+                    base_of_alphabetical_order)
                 serializer = self.get_serializer(query_set, many=True)
                 return Response(serializer.data)
             else:
@@ -76,26 +81,31 @@ class BaseViewSet(viewsets.ModelViewSet):
 
 
 class OwnerViewSet(BaseViewSet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.elements_to_capitalize_list = ["name", "surname"]
+        self.model_class_name = "owner"
+        self.model_class = Owner
+        self.bases_of_alphabetical_order_list = ["name", "surname"]
+
 
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
 
-    elements_to_capitalize_list = ["name", "surname"]
-    model_class_name = "owner"
-    model_class = Owner
-    bases_of_alphabetical_order_list = ["name", "surname"]
-
 
 class CarViewSet(BaseViewSet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.elements_to_capitalize_list = ["brand"]
+        self.model_class_name = "car"
+        self.model_class = Car
+        self.additional_validation = True
+        self.bases_of_alphabetical_order_list = ["brand", "model"]
 
     queryset = Car.objects.all()
     serializer_class = CarSerializer
-
-    elements_to_capitalize_list = ["brand"]
-    model_class_name = "car"
-    model_class = Car
-    additional_validation = True
-    bases_of_alphabetical_order_list = ["brand", "model"]
 
     def additional_validation_check(self, request_data_dict):
         # Validate the production date variable
@@ -104,18 +114,17 @@ class CarViewSet(BaseViewSet):
             return True, Response({"Date must be in YYYY-MM-DD format."})
         return False, Response({""})
 
-
-
-    @action(
-        detail=False,
-        url_path=r"production_date/"
-        r"(?P<ascending_or_descending>[ascending descending]+)",
-    )
-    def cars_in_production_date_order(self, request, ascending_or_descending):
-        if ascending_or_descending == "ascending":
-            cars = Car.objects.all().order_by("production_date")
-        elif ascending_or_descending == "descending":
-            cars = Car.objects.all().order_by("-production_date")
-
-        serializer = self.get_serializer(cars, many=True)
-        return Response(serializer.data)
+    @action(detail=False, url_path="production_date")
+    def cars_in_production_date_order(self, request):
+        if request.query_params:
+            sort_type = list(request.query_params.keys())[0]
+            if sort_type == "ascending":
+                cars = Car.objects.all().order_by("production_date")
+            elif sort_type == "descending":
+                cars = Car.objects.all().order_by("-production_date")
+            else:
+                return Response({"You cannot alphabetically sort by given data."})
+            serializer = self.get_serializer(cars, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({"Type '?ascending' or '?descending'."})
