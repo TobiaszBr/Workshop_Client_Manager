@@ -6,7 +6,7 @@ class Owner(models.Model):
     surname = models.CharField(max_length=20)
     phone = models.CharField(max_length=9, unique=True, blank=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name} {self.surname}"
 
 
@@ -16,5 +16,5 @@ class Car(models.Model):
     production_date = models.DateField()
     owner = models.ForeignKey("Owner", on_delete=models.CASCADE)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.brand} {self.model}"

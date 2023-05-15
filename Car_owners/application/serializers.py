@@ -1,3 +1,4 @@
+import collections
 import datetime
 from re import search
 from rest_framework import serializers
@@ -9,13 +10,13 @@ class OwnerSerializer(serializers.ModelSerializer):
         model = Owner
         fields = ["id", "name", "surname", "phone"]
 
-    def validate(self, data):
+    def validate(self, data: collections.OrderedDict) -> collections.OrderedDict:
         """
         Checks if name and surname contain only letters and '-'.
         """
 
         error_text = "Field can contain only letters and '-' without whitespaces."
-        if search("[^a-zA-Z-]", data["name"]):
+        if search("[^a-zA-Z-]", data["name"]):                                                      # tu dodatkowo muszą być polskie znaki jakoś.. bo nie mogędodać np Wąs..
             raise serializers.ValidationError({"name": error_text})
         elif search("[^a-zA-Z-]", data["surname"]):
             raise serializers.ValidationError({"surname": error_text})
@@ -27,7 +28,7 @@ class CarSerializer(serializers.ModelSerializer):
         model = Car
         fields = ["id", "brand", "model", "production_date", "owner"]
 
-    def validate(self, data):
+    def validate(self, data: collections.OrderedDict) -> collections.OrderedDict:
         """
         Checks that production date is not from the future.
         """
