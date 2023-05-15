@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from re import search
+from typing import Dict
 from rest_framework import viewsets
 from rest_framework.decorators import action
 import rest_framework.request
@@ -25,7 +26,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
     def get_parameters_from_request(
         self, request: rest_framework.request.Request, change_first_char_case: bool
-    ) -> dict:
+    ) -> Dict[str, str]:
         request_data_dict = {}
         for item in request.query_params:
             if change_first_char_case and item in self.elements_to_capitalize_list:
@@ -48,7 +49,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
     @abstractmethod
     def additional_validation_check(
-        self, request_data_dict: dict
+        self, request_data_dict: Dict[str, str]
     ) -> (bool, rest_framework.response.Response):
         return False, Response({""})
 
@@ -120,7 +121,7 @@ class OwnerViewSet(BaseViewSet):
         self.bases_of_alphabetical_order_list = ["name", "surname"]
 
     def additional_validation_check(
-        self, request_data_dict: dict
+        self, request_data_dict: Dict[str, str]
     ) -> (bool, rest_framework.response.Response):
         return self.additional_validation, Response({""})
 
@@ -139,7 +140,7 @@ class CarViewSet(BaseViewSet):
         self.bases_of_alphabetical_order_list = ["brand", "model"]
 
     def additional_validation_check(
-        self, request_data_dict: dict
+        self, request_data_dict: Dict[str, str]
     ) -> (bool, rest_framework.response.Response):
         # Validate the production date variable
         if not search(
