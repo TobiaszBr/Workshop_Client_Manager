@@ -1,13 +1,12 @@
 from abc import ABC, abstractmethod
 from re import search
+import rest_framework.request
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
-
-# a really good habit, especially since python 3.10 is typing. https://docs.python.org/3/library/typing.html
 
 class BaseViewSet(ABC, viewsets.ModelViewSet):
     """
@@ -24,8 +23,8 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         self.additional_validation = False
         self.bases_of_alphabetical_order_list = []
 
-    def get_parameters_from_request(self, request, change_first_char_case):
-        print(type(request))
+    def get_parameters_from_request(self, request: rest_framework.request.Request,
+                                    change_first_char_case: bool) -> dict:
         request_data_dict = {}
         for item in request.query_params:
             if change_first_char_case and item in self.elements_to_capitalize_list:
@@ -37,7 +36,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
         return request_data_dict
 
-    def response_when_no_object_found(self, request):
+    def response_when_no_object_found(self, request: rest_framework.request.Request) -> rest_framework.response.Response:
         respond = f"There is no {self.model_class_name} with"
         for key, value in request.query_params.items():
             respond += f" {key}: {value}"
@@ -45,12 +44,14 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         return Response(f"{respond}.")
 
     @abstractmethod
-    def additional_validation_check(self, request_data_dict):
-        pass
+    def additional_validation_check(self, request_data_dict: dict) -> (bool, rest_framework.response.Response):
+        return False, Response({""})
 
     # additional action functions.
     @action(detail=False, url_path="search")
-    def objects_with_the_given_data(self, request, change_first_char_case=False):
+    def objects_with_the_given_data(self, request: rest_framework.request.Request,
+                                    change_first_char_case: bool = False) -> rest_framework.response.Response:
+
         # Get parameters from URL request
         request_data_dict = self.get_parameters_from_request(request,
                                                              change_first_char_case)
@@ -59,6 +60,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         validation_error, response = self.additional_validation_check(request_data_dict)
         if validation_error:
             return response
+
 
         # Filters objects with given data and respond.
         query_set = self.model_class.objects.filter(**request_data_dict)
@@ -78,7 +80,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
             return self.response_when_no_object_found(request)
 
     @action(detail=False, url_path="alphabetical")
-    def objects_in_alphabetical_order(self, request):
+    def objects_in_alphabetical_order(self, request: rest_framework.request.Request) -> rest_framework.response.Response:
         if request.query_params:
             base_of_alphabetical_order = list(request.query_params.keys())[0]
             if base_of_alphabetical_order in self.bases_of_alphabetical_order_list:
@@ -106,7 +108,7 @@ class OwnerViewSet(BaseViewSet):
         self.additional_validation = False
         self.bases_of_alphabetical_order_list = ["name", "surname"]
 
-    def additional_validation_check(self, request_data_dict):
+    def additional_validation_check(self, request_data_dict: dict) -> (bool, rest_framework.response.Response):
         return self.additional_validation, Response({""})
 
 
@@ -124,7 +126,7 @@ class CarViewSet(BaseViewSet):
         self.additional_validation = True
         self.bases_of_alphabetical_order_list = ["brand", "model"]
 
-    def additional_validation_check(self, request_data_dict):
+    def additional_validation_check(self, request_data_dict: dict) -> (bool, rest_framework.response.Response):
         # Validate the production date variable
         if not search("[\d][\d][\d][\d][-][\d][\d][-][\d][\d]",
                       request_data_dict.get("production_date", "2000-01-01")):
@@ -132,7 +134,7 @@ class CarViewSet(BaseViewSet):
         return False, Response({""})
 
     @action(detail=False, url_path="production_date")
-    def cars_in_production_date_order(self, request):
+    def cars_in_production_date_order(self, request: rest_framework.request.Request) -> rest_framework.response.Response:
         if request.query_params:
             sort_type = list(request.query_params.keys())[0]
             if sort_type == "ascending":
