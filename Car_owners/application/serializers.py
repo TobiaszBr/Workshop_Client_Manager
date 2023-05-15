@@ -16,9 +16,9 @@ class OwnerSerializer(serializers.ModelSerializer):
         """
 
         error_text = "Field can contain only letters and '-' without whitespaces."
-        if search("[^a-zA-Z-]", data["name"]):                                                      # tu dodatkowo muszą być polskie znaki jakoś.. bo nie mogędodać np Wąs..
+        if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", data["name"]):
             raise serializers.ValidationError({"name": error_text})
-        elif search("[^a-zA-Z-]", data["surname"]):
+        elif search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", data["surname"]):
             raise serializers.ValidationError({"surname": error_text})
         return data
 
