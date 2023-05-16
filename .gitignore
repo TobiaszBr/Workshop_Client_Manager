@@ -9,6 +9,7 @@ local_settings.py
 
 # Environment
 venv/
+Car_owners/.env
 
 # PyCharm
 .idea

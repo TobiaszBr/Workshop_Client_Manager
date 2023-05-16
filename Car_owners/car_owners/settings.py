@@ -9,6 +9,7 @@ SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # It's a good idea to have prod_settings.py and local_settings.py for prod and dev environments
+# And how should I achieve that? Just have 2 additional files and copy their content to settings.py accordingly?
 DEBUG = True
 
 ALLOWED_HOSTS = [
@@ -111,6 +112,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False                       # You added those three variables, why? 
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
