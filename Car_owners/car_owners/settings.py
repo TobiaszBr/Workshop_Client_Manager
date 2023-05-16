@@ -116,3 +116,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SESSION_COOKIE_SECURE = False                       # You added those three variables, why?
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }
