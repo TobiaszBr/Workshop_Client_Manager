@@ -19,7 +19,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
     'update', and 'destroy' actions.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.elements_to_capitalize_list = []
@@ -109,7 +109,7 @@ class OwnerViewSet(BaseViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.elements_to_capitalize_list = ["name", "surname"]
