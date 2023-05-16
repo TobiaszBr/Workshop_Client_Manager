@@ -5,6 +5,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 import rest_framework.request
 from rest_framework.response import Response
+from rest_framework_swagger.views import get_swagger_view
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
@@ -162,3 +163,6 @@ class CarViewSet(BaseViewSet):
             return Response(serializer.data)
         else:
             return Response({"Type '?ascending' or '?descending'."})
+
+
+schema_view = get_swagger_view(title="Car owners API")
