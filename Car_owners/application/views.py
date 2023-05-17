@@ -27,7 +27,6 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         self.model_class_name = "object"
         self.model_class = None
         self.additional_validation = False
-        self.bases_of_alphabetical_order_list = []
 
     def get_parameters_from_request(
         self, request: request_type, change_first_char_case: bool
@@ -62,8 +61,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
     ) -> response_type:
         # Get parameters from URL request
         request_data_dict = self.get_parameters_from_request(
-            request, change_first_char_case
-        )
+            request, change_first_char_case)
 
         # Additional validation
         validation_error, response = self.additional_validation_check(request_data_dict)
@@ -101,15 +99,14 @@ class OwnerViewSet(BaseViewSet):
         self.model_class_name = "owner"
         self.model_class = Owner
         self.additional_validation = False
-        self.bases_of_alphabetical_order_list = ["name", "surname"]                            # to w takim razie jeżeli przeniosę tę funkcję do każdej osobno jak było to czy to ma jakiś sens?
 
     def additional_validation_check(self, request_data_dict: Dict[str, str]
     ) -> (bool, response_type):
         return self.additional_validation, Response({""})
 
-
-    @action(detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[name surname]+)")       # sprawdzić jeszcze czy da się tu zmienną zamias [name surname] dać
-    def objects_in_alphabetical_order(self, request, alphabetical_base):                         # jak coś to tu nie masz teraz type hintsów
+    @action(detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[name surname]+)")
+    def objects_in_alphabetical_order(self, request: request_type, alphabetical_base: str
+    ) -> response_type:
 
         query_set = self.model_class.objects.all().order_by(alphabetical_base)
         serializer = self.get_serializer(query_set, many=True)
@@ -127,7 +124,6 @@ class CarViewSet(BaseViewSet):
         self.model_class_name = "car"
         self.model_class = Car
         self.additional_validation = True
-        self.bases_of_alphabetical_order_list = ["brand", "model"]
 
     def additional_validation_check(self, request_data_dict: Dict[str, str]
     ) -> (bool, response_type):
@@ -139,23 +135,20 @@ class CarViewSet(BaseViewSet):
             return True, Response({"Date must be in YYYY-MM-DD format."})
         return False, Response({""})
 
-    @action(detail=False, url_path="production_date")
-    def cars_in_production_date_order(self, request: request_type) -> response_type:
-        if request.query_params:
-            sort_type = list(request.query_params.keys())[0]
-            if sort_type == "ascending":
-                cars = Car.objects.all().order_by("production_date")
-            elif sort_type == "descending":
-                cars = Car.objects.all().order_by("-production_date")
-            else:
-                return Response({"You cannot alphabetically sort by given data."})
-            serializer = self.get_serializer(cars, many=True)
-            return Response(serializer.data)
+    @action(detail=False, url_path=r"production_date/(?P<sort_order>[ascending descending]+)")
+    def cars_in_production_date_order(self, request: request_type, sort_order: str) -> response_type:
+        if sort_order == "ascending":
+            query_set = self.model_class.objects.all().order_by("production_date")
+        elif sort_order == "descending":
+            query_set = self.model_class.objects.all().order_by("-production_date")
         else:
-            return Response({"Type '?ascending' or '?descending'."})
+            return Response({"Wrong url."})
+
+        serializer = self.get_serializer(query_set, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[brand model]+)")
-    def objects_in_alphabetical_order(self, request, alphabetical_base):                                #jw
+    def objects_in_alphabetical_order(self, request: request_type, alphabetical_base: str) -> response_type:
         query_set = self.model_class.objects.all().order_by(alphabetical_base)
         serializer = self.get_serializer(query_set, many=True)
         return Response(serializer.data)
