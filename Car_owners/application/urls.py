@@ -11,5 +11,5 @@ router.register(r"cars", views.CarViewSet, basename="car")
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
     path("", include(router.urls)),
-    path("swagger", views.schema_view),
+    path(r"^$", views.schema_view),
 ]
