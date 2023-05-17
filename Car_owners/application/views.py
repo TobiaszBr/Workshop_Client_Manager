@@ -51,8 +51,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         return Response(f"{respond}.")
 
     @abstractmethod
-    def additional_validation_check(
-        self, request_data_dict: Dict[str, str]
+    def additional_validation_check(self, request_data_dict: Dict[str, str]
     ) -> (bool, response_type):
         return False, Response({""})
 
@@ -75,35 +74,20 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         query_set = self.model_class.objects.filter(**request_data_dict)
         serializer = self.get_serializer(query_set, many=True)
 
-        # I tried to use get_list_or_404 from django.shortcuts and it partially worked,
-        # but I didn't like the way it worked - when the query_set is empty I would like
-        # to use my own response_when_no_object_found function instead of
-        # {
-        #    "detail" = "Not found"
-        # }
+        # Return data or change first letters
         if query_set:
             return Response(serializer.data)
         elif not change_first_char_case:
             return self.objects_with_the_given_data(
-                request, change_first_char_case=True
+                request, change_first_char_case=True                                        # tu niby to działa, ale jak zmienię np tobiasz&Bernacki to już nie (bo zawsze zmieniam oba parametry, a w sumie powinienem zmienić pojedynczo i szukać
+                                                                                            # czyli w tym przypadku dla name i surname w sumie powinno szukać 4 razy?
             )
         else:
             return self.response_when_no_object_found(request)
 
-    @action(detail=False, url_path="alphabetical")
-    def objects_in_alphabetical_order(self, request: request_type) -> response_type:
-        if request.query_params:
-            base_of_alphabetical_order = list(request.query_params.keys())[0]
-            if base_of_alphabetical_order in self.bases_of_alphabetical_order_list:
-                query_set = self.model_class.objects.all().order_by(
-                    base_of_alphabetical_order
-                )
-                serializer = self.get_serializer(query_set, many=True)
-                return Response(serializer.data)
-            else:
-                return Response({"You cannot alphabetically sort by given data."})
-        else:
-            return Response({"Type parameter based on which you would like to sort."})
+    @abstractmethod
+    def objects_in_alphabetical_order(self):
+        pass
 
 
 class OwnerViewSet(BaseViewSet):
@@ -117,12 +101,19 @@ class OwnerViewSet(BaseViewSet):
         self.model_class_name = "owner"
         self.model_class = Owner
         self.additional_validation = False
-        self.bases_of_alphabetical_order_list = ["name", "surname"]
+        self.bases_of_alphabetical_order_list = ["name", "surname"]                            # to w takim razie jeżeli przeniosę tę funkcję do każdej osobno jak było to czy to ma jakiś sens?
 
-    def additional_validation_check(
-        self, request_data_dict: Dict[str, str]
+    def additional_validation_check(self, request_data_dict: Dict[str, str]
     ) -> (bool, response_type):
         return self.additional_validation, Response({""})
+
+
+    @action(detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[name surname]+)")       # sprawdzić jeszcze czy da się tu zmienną zamias [name surname] dać
+    def objects_in_alphabetical_order(self, request, alphabetical_base):                         # jak coś to tu nie masz teraz type hintsów
+
+        query_set = self.model_class.objects.all().order_by(alphabetical_base)
+        serializer = self.get_serializer(query_set, many=True)
+        return Response(serializer.data)
 
 
 class CarViewSet(BaseViewSet):
@@ -138,8 +129,7 @@ class CarViewSet(BaseViewSet):
         self.additional_validation = True
         self.bases_of_alphabetical_order_list = ["brand", "model"]
 
-    def additional_validation_check(
-        self, request_data_dict: Dict[str, str]
+    def additional_validation_check(self, request_data_dict: Dict[str, str]
     ) -> (bool, response_type):
         # Validate the production date variable
         if not search(
@@ -163,6 +153,12 @@ class CarViewSet(BaseViewSet):
             return Response(serializer.data)
         else:
             return Response({"Type '?ascending' or '?descending'."})
+
+    @action(detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[brand model]+)")
+    def objects_in_alphabetical_order(self, request, alphabetical_base):                                #jw
+        query_set = self.model_class.objects.all().order_by(alphabetical_base)
+        serializer = self.get_serializer(query_set, many=True)
+        return Response(serializer.data)
 
 
 # Swagger standard view
