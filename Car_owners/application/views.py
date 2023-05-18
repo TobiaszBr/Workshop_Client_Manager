@@ -5,7 +5,6 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 import rest_framework.request
 from rest_framework.response import Response
-from rest_framework_swagger.views import get_swagger_view
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
@@ -152,8 +151,4 @@ class CarViewSet(BaseViewSet):
         query_set = self.model_class.objects.all().order_by(alphabetical_base)
         serializer = self.get_serializer(query_set, many=True)
         return Response(serializer.data)
-
-
-# Swagger standard view
-schema_view = get_swagger_view(title="Car owners API")
 
