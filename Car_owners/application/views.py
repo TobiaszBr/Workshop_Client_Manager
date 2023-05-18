@@ -156,3 +156,4 @@ class CarViewSet(BaseViewSet):
 
 # Swagger standard view
 schema_view = get_swagger_view(title="Car owners API")
+
