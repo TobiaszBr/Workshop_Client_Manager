@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from re import search
 from typing import Dict
 from django.db.models import Q
@@ -23,9 +24,9 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.elements_to_capitalize_list = []
-        self.model_class_name = "object"
+        #self.elements_to_capitalize_list = []
         self.model_class = None
+        self.model_class_name = "object"
 
 
     def response_when_no_object_found(self, request: request_type) -> response_type:
@@ -52,9 +53,9 @@ class OwnerViewSet(BaseViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.elements_to_capitalize_list = ["name", "surname"]
-        self.model_class_name = "owner"
+        #self.elements_to_capitalize_list = ["name", "surname"]
         self.model_class = Owner
+        self.model_class_name = self.model_class._meta.object_name
 
     # additional action functions.
     @action(detail=False, url_path="search")
@@ -62,7 +63,7 @@ class OwnerViewSet(BaseViewSet):
         # Filters objects with given data and respond.
         filter_list = []
 
-        if "name" in request.query_params.keys():
+        if "name" in request.query_params.keys():                                           # postaraj się zrobić to bardziej uniwersalnie?
             q = Q(name__iexact = request.query_params["name"])
             filter_list.append(q)
 
@@ -99,19 +100,22 @@ class CarViewSet(BaseViewSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.elements_to_capitalize_list = ["brand", "model"]
-        self.model_class_name = "car"
+        #self.elements_to_capitalize_list = ["brand", "model"]
         self.model_class = Car
+        self.model_class_name = self.model_class._meta.object_name
 
-    def additional_validation_check(self, request_data_dict: Dict[str, str]                         # jak jest np 2022-05-32 to jest format ok ale data nie valid i jest błąd
+    def additional_validation_check(self, request_data_dict: Dict[str, str]
     ) -> (bool, response_type):
         # Validate the production date variable
-        if not search(
-            "[\d][\d][\d][\d][-][\d][\d][-][\d][\d]",
-            request_data_dict.get("production_date", "2000-01-01"),
-        ):
-            return True, Response({"Date must be in YYYY-MM-DD format."})
+        date_string = request_data_dict.get("production_date", "2000-01-01")
+        try:
+            date_object = datetime.strptime(date_string, "%Y-%m-%d")
+            print(date_object)
+        except ValueError:
+            return True, Response({"Date out of range or wrong date format - must be YYYY-MM-DD."})
+
         return False, Response({""})
+
 
     # additional action functions.
     @action(detail=False, url_path="search")
