@@ -31,6 +31,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         self.model_class_name = "object"
         self.queryset = None
         self.case_insensitive_fields = []
+        #self.manual_parameters_list = ["id", "name", "surname", "phone"]
 
     def response_when_no_object_found(self, request: request_type) -> response_type:
         respond = f"There is no {self.model_class_name} with"
@@ -75,9 +76,15 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
                                 description="Test phone description",
                                 type=openapi.TYPE_STRING)
 
+    manual_parameters_list = [id, name, surname, phone]
+
+    swagger_auto_schema_params_dict = {
+        "manual_parameters": manual_parameters_list
+    }
+
 
     @action(detail=False, url_path="search")
-    @swagger_auto_schema(manual_parameters=[id, name, surname, phone])
+    @swagger_auto_schema(**swagger_auto_schema_params_dict)
     def objects_with_the_given_data(self, request: request_type) -> response_type:
         # Additional validation
         validation_error, response = self.additional_validation_check(
