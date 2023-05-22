@@ -9,6 +9,9 @@ from rest_framework.response import Response
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 
 request_type = rest_framework.request.Request
 response_type = rest_framework.response.Response
@@ -61,7 +64,20 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         return False, Response({""})
 
     # additional action functions.
+    id = openapi.Parameter("id", in_=openapi.IN_QUERY,
+                             description="Test id description",
+                             type=openapi.TYPE_INTEGER)
+    name = openapi.Parameter("name", in_=openapi.IN_QUERY, description="Test name description", type=openapi.TYPE_STRING)
+    surname = openapi.Parameter("surname", in_=openapi.IN_QUERY,
+                             description="Test surname description",
+                             type=openapi.TYPE_STRING)
+    phone = openapi.Parameter("phone", in_=openapi.IN_QUERY,
+                                description="Test phone description",
+                                type=openapi.TYPE_STRING)
+
+
     @action(detail=False, url_path="search")
+    @swagger_auto_schema(manual_parameters=[id, name, surname, phone])
     def objects_with_the_given_data(self, request: request_type) -> response_type:
         # Additional validation
         validation_error, response = self.additional_validation_check(
