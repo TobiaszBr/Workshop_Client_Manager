@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from re import search
 from typing import Dict
 from django.db.models import Q
 from rest_framework import viewsets
@@ -24,10 +23,8 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        #self.elements_to_capitalize_list = []
         self.model_class = None
         self.model_class_name = "object"
-
 
     def response_when_no_object_found(self, request: request_type) -> response_type:
         respond = f"There is no {self.model_class_name} with"
@@ -47,15 +44,15 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
 
 class OwnerViewSet(BaseViewSet):
-    queryset = Owner.objects.all()
+
     serializer_class = OwnerSerializer
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        #self.elements_to_capitalize_list = ["name", "surname"]
         self.model_class = Owner
         self.model_class_name = self.model_class._meta.object_name
+        self.queryset = self.model_class.objects.all()
 
     # additional action functions.
     @action(detail=False, url_path="search")
@@ -75,11 +72,11 @@ class OwnerViewSet(BaseViewSet):
             q = Q(phone=request.query_params["phone"])
             filter_list.append(q)
 
-        query_set = self.model_class.objects.filter(*filter_list)
-        serializer = self.get_serializer(query_set, many=True)
+        queryset = self.queryset.filter(*filter_list)
+        serializer = self.get_serializer(queryset, many=True)
 
         # Return data or change first letters
-        if query_set:
+        if queryset:
             return Response(serializer.data)
         else:
             return self.response_when_no_object_found(request)
@@ -94,15 +91,15 @@ class OwnerViewSet(BaseViewSet):
 
 
 class CarViewSet(BaseViewSet):
-    queryset = Car.objects.all()
+    
     serializer_class = CarSerializer
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        #self.elements_to_capitalize_list = ["brand", "model"]
         self.model_class = Car
         self.model_class_name = self.model_class._meta.object_name
+        self.queryset = self.model_class.objects.all()
 
     def additional_validation_check(self, request_data_dict: Dict[str, str]
     ) -> (bool, response_type):
@@ -140,11 +137,11 @@ class CarViewSet(BaseViewSet):
             q = Q(owner=request.query_params["owner"])
             filter_list.append(q)
 
-        query_set = self.model_class.objects.filter(*filter_list)
-        serializer = self.get_serializer(query_set, many=True)
+        queryset = self.queryset.filter(*filter_list)
+        serializer = self.get_serializer(queryset, many=True)
 
         # Return data or change first letters
-        if query_set:
+        if queryset:
             return Response(serializer.data)
         else:
             return self.response_when_no_object_found(request)
