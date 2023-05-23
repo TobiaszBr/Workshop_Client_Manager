@@ -6,14 +6,14 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 
+# Schema view for swagger
 schema_view = get_schema_view(
    openapi.Info(
       title="Car owners API",
       default_version='v1',
-      description="Test description - test",
-      terms_of_service="https://www.test.com/policies/terms/",
-      contact=openapi.Contact(email="contact@test.local"),
-      license=openapi.License(name="TEST License"),
+      description="API allows to create, edit, delete, list and search owners and their cars.",
+      contact=openapi.Contact(email="tobiasz_bernacki@onet.pl"),
+      license=openapi.License(name="GNU License"),
    ),
    public=True,
    permission_classes=[permissions.AllowAny],
