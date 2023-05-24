@@ -5,7 +5,11 @@
 You can run `pip install -r requirements.txt` command at terminal
 - Copy the following SECRET_KEY : 
 `"django-insecure-=ok6&fsow=(^4(&&$k=45eda5%d37*!s6xf78jx9wz&&g#6h6-"` 
-and paste it at settings.py instead of `config("SECRET_KEY")`
+and paste it at `prod_settings.py` (or `dev_settings.py`) instead of 
+`config("SECRET_KEY")`
+- If you want to use development settings, go to `manage.py` file and change 
+`prod_settings` to `dev_settings` at
+`os.environ.setdefault("DJANGO_SETTINGS_MODULE", "car_owners.prod_settings")`
 - At terminal go to Car_owners directory and run `python manage.py runserver`
 
 ## API
