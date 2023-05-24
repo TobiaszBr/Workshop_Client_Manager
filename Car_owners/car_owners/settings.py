@@ -8,7 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# It's a good idea to have prod_settings.py and local_settings.py for prod and dev environments
+# And how should I achieve that? Just have 2 additional files and copy their content to settings.py accordingly?
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "*"
@@ -114,3 +116,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SESSION_COOKIE_SECURE = False                       # You added those three variables, why?
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+#REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }
