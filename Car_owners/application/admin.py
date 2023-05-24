@@ -7,9 +7,7 @@ class CarInLine(admin.TabularInline):
 
 
 class OwnerAdmin(admin.ModelAdmin):
-    inlines = [
-        CarInLine
-    ]
+    inlines = [CarInLine]
 
 
 class CarAdmin(admin.ModelAdmin):

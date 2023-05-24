@@ -1,249 +1,289 @@
-from .models import Owner, Car
-from .serializers import OwnerSerializer, CarSerializer
+from abc import ABC, abstractmethod
+from datetime import datetime
+from typing import Dict, List
+from django.db.models import Q, query_utils
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from rest_framework import viewsets
 from rest_framework.decorators import action
+import rest_framework.request
 from rest_framework.response import Response
-from django.utils.datastructures import MultiValueDictKeyError
-from django.core.exceptions import ValidationError
+from .models import Owner, Car
+from .serializers import OwnerSerializer, CarSerializer
 
 
-def check_if_queryset_is_empty(queryset, objects, parameter_to_check_input,
-                               serializer, *parameter_to_check, many=False):
-    if queryset:
-        serializer = serializer(queryset, many=many)
-        return Response(serializer.data)
+request_type = rest_framework.request.Request
+response_type = rest_framework.response.Response
+q_type = query_utils.Q
 
-    parameters = ' '.join([parameter for parameter in parameter_to_check]).strip()
-    return Response(f"There is no {objects} with {parameters}"
-                    f" {parameter_to_check_input}")
 
-class OwnerViewSet(viewsets.ModelViewSet):
+class BaseViewSet(ABC, viewsets.ModelViewSet):
     """
     This viewset automatically provides 'list', 'create', 'retrieve',
     'update', and 'destroy' actions.
     """
 
-    queryset = Owner.objects.all()
-    serializer_class = OwnerSerializer
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-    def try_to_get_parameters_from_request(self, request):
-        try:
-            name = request.GET['name'].title()
-        except MultiValueDictKeyError:
-            name = ''
-        try:
-            surname = request.GET['surname'].title()
-        except MultiValueDictKeyError:
-            surname = ''
-        try:
-            phone = f"+{request.GET['phone'].strip()}"
-        except MultiValueDictKeyError:
-            phone = 0
+        self.model_class = None
+        self.model_class_name = "object"
+        self.queryset = None
+        self.case_insensitive_fields = []
 
-        return name, surname, phone
+    def response_when_no_object_found(self, request: request_type) -> response_type:
+        respond = f"There is no {self.model_class_name} with"
+        for key, value in request.query_params.items():
+            respond += f" {key}: {value}"
 
-    def owner_parameters_search_logic(self, name, surname, phone):
-        if phone:
-            try:
-                owner = Owner.objects.get(phone=phone)
-                if (not name and not surname or
-                name == owner.name and surname == owner.surname or
-                name == owner.name and not surname or
-                surname == owner.surname and not name
-                ):
-                    owners = owner
+        return Response(f"{respond}.")
+
+    def get_filter_list(self, request: request_type) -> List[q_type]:
+        filter_list = []
+        model_fields_names_list = [
+            element.name for element in self.model_class._meta.get_fields()
+        ]
+
+        for field in model_fields_names_list:
+            if field in request.query_params.keys():
+                parameters_dict = {}
+                if field in self.case_insensitive_fields:
+                    parameters_dict[f"{field}__iexact"] = request.query_params[field]
                 else:
-                    owners = 0
-            except Owner.DoesNotExist:
-                owners = Owner.objects.filter(phone=phone)
+                    parameters_dict[field] = request.query_params[field]
 
+                q = Q(**parameters_dict)
+                filter_list.append(q)
 
-            name_prompt = 'name ' if name else ''
-            surname_prompt = 'surname ' if surname else ''
-            and_prompt = 'and ' if name or surname else ''
+        return filter_list
 
-            return check_if_queryset_is_empty(owners, 'owner',
-                                              f'{name_prompt}{surname_prompt}'
-                                              f'{and_prompt}phone',
-                                              self.get_serializer,
-                                              *[name, surname, phone],
-                                              many=False)
-
-        elif name and surname:
-            owners = Owner.objects.filter(name=name, surname=surname)
-            return check_if_queryset_is_empty(owners, 'owner',
-                                              'name and surname',
-                                              self.get_serializer,
-                                              *[name, surname], many=True)
-
-        elif name:
-            owners = Owner.objects.filter(name=name)
-            return check_if_queryset_is_empty(owners, 'owner', 'name',
-                                              self.get_serializer, name,
-                                              many=True)
-
-        elif surname:
-            owners = Owner.objects.filter(surname=surname)
-            return check_if_queryset_is_empty(owners, 'owner', 'surname',
-                                              self.get_serializer, surname,
-                                              many=True)
-        else:
-            return Response({'You did not put any parameter to search '
-                             'function.'})
+    @abstractmethod
+    def additional_validation_check(self):
+        pass
 
     # additional action functions.
-    @action(detail=False, url_path='search')
-    def owners_with_the_given_data(self, request):
-        # Try to get parameters from URL request
-        name, surname, phone = \
-            self.try_to_get_parameters_from_request(request)
+    @abstractmethod
+    def objects_with_the_given_data(self):
+        pass
 
-        # Owner's parameters search and filter logic with responds.
-        return self.owner_parameters_search_logic(name, surname, phone)
+    @abstractmethod
+    def objects_in_alphabetical_order(self):
+        pass
 
-    @action(detail=False,
-            url_path=r'(?P<name_or_surname>[name surname]+)/alphabetic')
-    def owners_in_alphabetic_order(self, request, name_or_surname):
-        owners = Owner.objects.all().order_by(name_or_surname)
-        serializer = self.get_serializer(owners, many=True)
+
+class OwnerViewSet(BaseViewSet):
+    serializer_class = OwnerSerializer
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.model_class = Owner
+        self.model_class_name = self.model_class._meta.object_name
+        self.queryset = self.model_class.objects.all()
+        self.case_insensitive_fields = ["name", "surname"]
+
+    def additional_validation_check(
+        self, request_data_dict: Dict[str, str]
+    ) -> (bool, response_type):
+        phone_number = request_data_dict.get("phone", "000000000")
+        if len(phone_number) < 9:
+            return True, Response({"Phone number is to short."})
+        elif len(phone_number) > 9:
+            return True, Response({"Phone number is to long."})
+        else:
+            return False, Response({""})
+
+    @staticmethod
+    def get_swagger_search_parameters():
+        swagger_search_parameters_dict = {
+            "id": "Owner's unique id number",
+            "name": "Owner's name",
+            "surname": "Owner's surname",
+            "phone": "Owner's phone number - 9 digits",
+        }
+        manual_parameters_list = []
+        for parameter_name, description in swagger_search_parameters_dict.items():
+            if parameter_name != "id":
+                field_type = openapi.TYPE_STRING
+            else:
+                field_type = openapi.TYPE_INTEGER
+
+            parameter = openapi.Parameter(
+                parameter_name,
+                in_=openapi.IN_QUERY,
+                description=f"{description}",
+                type=field_type,
+            )
+
+            manual_parameters_list.append(parameter)
+
+        swagger_auto_schema_params_dict = {"manual_parameters": manual_parameters_list}
+
+        return swagger_auto_schema_params_dict
+
+    # additional action functions.
+    @swagger_auto_schema(**get_swagger_search_parameters())
+    @action(detail=False, url_path="search")
+    def objects_with_the_given_data(self, request: request_type) -> response_type:
+        # Additional validation
+        validation_error, response = self.additional_validation_check(
+            request.query_params
+        )
+        if validation_error:
+            return response
+
+        filter_list = self.get_filter_list(request)
+        queryset = self.queryset.filter(*filter_list)
+        serializer = self.get_serializer(queryset, many=True)
+
+        # Return data or change first letters
+        if queryset:
+            return Response(serializer.data)
+        else:
+            return self.response_when_no_object_found(request)
+
+    @action(
+        detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[name surname]+)"
+    )
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "alphabetical_base",
+                in_=openapi.IN_PATH,
+                description="Select base of alphabetical order: name or surname",
+                type=openapi.TYPE_STRING,
+            )
+        ]
+    )
+    def objects_in_alphabetical_order(
+        self, request: request_type, alphabetical_base: str
+    ) -> response_type:
+        query_set = self.queryset.all().order_by(alphabetical_base)
+        serializer = self.get_serializer(query_set, many=True)
         return Response(serializer.data)
 
 
-class CarViewSet(viewsets.ModelViewSet):
-    """
-    This viewset automatically provides 'list', 'create', 'retrieve',
-    'update', and 'destroy' actions.
-    """
-    queryset = Car.objects.all()
+class CarViewSet(BaseViewSet):
     serializer_class = CarSerializer
 
-    def try_to_get_parameters_from_request(self, request):
-        try:
-            brand = request.GET['brand'].title()
-        except MultiValueDictKeyError:
-            brand = ''
-        try:
-            model = request.GET['model'].title()
-        except MultiValueDictKeyError:
-            model = ''
-        try:
-            production_date = request.GET['production_date']
-        except MultiValueDictKeyError:
-            production_date = 0
-        try:
-            owner = request.GET['owner_id']
-        except MultiValueDictKeyError:
-            owner = ''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        return brand, model, production_date, owner
+        self.model_class = Car
+        self.model_class_name = self.model_class._meta.object_name
+        self.queryset = self.model_class.objects.all()
+        self.case_insensitive_fields = ["brand", "model"]
 
-    def car_parameters_search_logic(self, brand, model, production_date, owner):
-
+    def additional_validation_check(
+        self, request_data_dict: Dict[str, str]
+    ) -> (bool, response_type):
         # Validate the production date variable
-        if production_date:
-            try:
-                Car.objects.filter(production_date=production_date)
-            except ValidationError as error:
-                return Response({error.messages[0]})
+        date_string = request_data_dict.get("production_date", "2000-01-01")
+        try:
+            date_object = datetime.strptime(date_string, "%Y-%m-%d")
+        except ValueError:
+            return True, Response(
+                {"Date out of range or wrong date format - must be YYYY-MM-DD."}
+            )
 
-        # Validate the owner variable
-        if owner:
-            try:
-                Car.objects.filter(owner=int(owner))
-            except ValueError:
-                return Response({'Owner id must be a number.'})
+        return False, Response({""})
 
+    @staticmethod
+    def get_swagger_search_parameters():
+        swagger_search_parameters_dict = {
+            "id": "Car's unique id number",
+            "brand": "Car's brand",
+            "model": "Car's model",
+            "production_date": "Car's production date in YYYY-MM-DD format",
+            "owner": "Car owner's id",
+        }
 
-        if brand and model and production_date:
-            cars = Car.objects.filter(brand=brand, model=model,
-                                      production_date = production_date)
-            return check_if_queryset_is_empty(cars, 'car',
-                                              'brand, model and production date',
-                                              self.get_serializer,
-                                              *[brand, model, production_date],
-                                              many=True)
+        manual_parameters_list = []
+        for parameter_name, description in swagger_search_parameters_dict.items():
+            if parameter_name in ["id", "owner"]:
+                field_type = openapi.TYPE_INTEGER
+            elif parameter_name == "production_date":
+                field_type = openapi.FORMAT_DATE
+            else:
+                field_type = openapi.TYPE_STRING
 
-        elif brand and model:
-            cars = Car.objects.filter(brand=brand, model=model)
-            return check_if_queryset_is_empty(cars, 'car',
-                                              'brand and model',
-                                              self.get_serializer,
-                                              *[brand, model], many=True)
+            parameter = openapi.Parameter(
+                parameter_name,
+                in_=openapi.IN_QUERY,
+                description=f"{description}",
+                type=field_type,
+            )
 
-        elif brand and production_date:
-            cars = Car.objects.filter(brand=brand,
-                                      production_date=production_date)
-            return check_if_queryset_is_empty(cars, 'car',
-                                              'brand and production date',
-                                              self.get_serializer,
-                                              *[brand, production_date],
-                                              many=True)
+            manual_parameters_list.append(parameter)
 
-        elif model and production_date:
-            cars = Car.objects.filter(model=model,
-                                      production_date=production_date)
-            return check_if_queryset_is_empty(cars, 'car',
-                                              'model and production date',
-                                              self.get_serializer,
-                                              *[model, production_date],
-                                              many=True)
+        swagger_auto_schema_params_dict = {"manual_parameters": manual_parameters_list}
 
-        elif brand:
-            cars = Car.objects.filter(brand=brand)
-            return check_if_queryset_is_empty(cars, 'car', 'brand',
-                                              self.get_serializer, brand,
-                                              many=True)
+        return swagger_auto_schema_params_dict
 
-        elif model:
-            cars = Car.objects.filter(model=model)
-            return check_if_queryset_is_empty(cars, 'car', 'model',
-                                              self.get_serializer, model,
-                                              many=True)
+    # additional action functions.
+    @swagger_auto_schema(**get_swagger_search_parameters())
+    @action(detail=False, url_path="search")
+    def objects_with_the_given_data(self, request: request_type) -> response_type:
+        # Additional validation
+        validation_error, response = self.additional_validation_check(
+            request.query_params
+        )
+        if validation_error:
+            return response
 
-        elif production_date:
-            cars = Car.objects.filter(production_date=production_date)
-            return check_if_queryset_is_empty(cars, 'car', 'production date',
-                                              self.get_serializer,
-                                              production_date, many=True)
+        filter_list = self.get_filter_list(request)
+        queryset = self.queryset.filter(*filter_list)
+        serializer = self.get_serializer(queryset, many=True)
 
-        elif owner:
-            cars = Car.objects.filter(owner=int(owner))
-            return check_if_queryset_is_empty(cars, 'car', 'owner id',
-                                              self.get_serializer, owner,
-                                              many=True)
-
+        # Return data or change first letters
+        if queryset:
+            return Response(serializer.data)
         else:
-            return Response({'You did not put any parameter to search '
-                             'function.'})
+            return self.response_when_no_object_found(request)
 
-    @action(detail=False, url_path='search')
-    def cars_with_the_given_data(self, request):
-        # Try to get parameters from URL request
-        brand, model, production_date, owner = \
-            self.try_to_get_parameters_from_request(request)
+    @action(
+        detail=False,
+        url_path=r"production_date/(?P<sort_order>[ascending descending]+)",
+    )
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "sort_order",
+                in_=openapi.IN_PATH,
+                description="Select cars' production date order: ascending or descending",
+                type=openapi.TYPE_STRING,
+            )
+        ]
+    )
+    def cars_in_production_date_order(
+        self, request: request_type, sort_order: str
+    ) -> response_type:
+        if sort_order == "ascending":
+            query_set = self.queryset.all().order_by("production_date")
+        elif sort_order == "descending":
+            query_set = self.queryset.all().order_by("-production_date")
+        else:
+            return Response({"Wrong url."})
 
-        # Car's parameters search and filter logic with responds.
-        return self.car_parameters_search_logic(brand, model, production_date,
-                                                owner)
-
-
-    @action(detail=False,
-            url_path=r'(?P<brand_or_model>[brand model]+)/alphabetic')
-    def cars_in_alphabetic_order(self, request, brand_or_model):
-        cars = Car.objects.all().order_by(brand_or_model)
-        serializer = self.get_serializer(cars, many=True)
+        serializer = self.get_serializer(query_set, many=True)
         return Response(serializer.data)
 
-
-    @action(detail=False,
-            url_path=r'production_date/'
-                     r'(?P<ascending_or_descending>[ascending descending]+)')
-    def cars_in_production_date_order(self, request, ascending_or_descending):
-
-        if ascending_or_descending == 'ascending':
-            cars = Car.objects.all().order_by('production_date')
-        elif ascending_or_descending == 'descending':
-            cars = Car.objects.all().order_by('-production_date')
-
-        serializer = self.get_serializer(cars, many=True)
+    @action(
+        detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[brand model]+)"
+    )
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "alphabetical_base",
+                in_=openapi.IN_PATH,
+                description="Select base of alphabetical order: brand or model",
+                type=openapi.TYPE_STRING,
+            )
+        ]
+    )
+    def objects_in_alphabetical_order(
+        self, request: request_type, alphabetical_base: str
+    ) -> response_type:
+        query_set = self.queryset.all().order_by(alphabetical_base)
+        serializer = self.get_serializer(query_set, many=True)
         return Response(serializer.data)

@@ -1,6 +1,15 @@
-.idea
-venv
+# Python
 Car_owners/application/__pycache__/
+Car_owners/car_owners/__pycache__/
+*.pyc
 
-Car_owners/car_owners/__pycache__
-Car_owners/application/__pycache__
+# Django stuff:
+*.log
+local_settings.py
+
+# Environment
+venv/
+Car_owners/.env
+
+# PyCharm
+.idea
