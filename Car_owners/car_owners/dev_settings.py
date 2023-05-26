@@ -63,10 +63,14 @@ WSGI_APPLICATION = "car_owners.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
+DATABASES = {                                                                               # jak bd działać to przenieś passy do .env
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",  # as a next step I suggest to implement postgresql db
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "railway",
+        "USER": "postgres",
+        "PASSWORD": "cwQjXFMg4AmKzaZ5zKg9",
+        "HOST": "containers-us-west-4.railway.app",
+        "PORT": "5991",
     }
 }
 
