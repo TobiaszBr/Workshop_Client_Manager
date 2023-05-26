@@ -65,8 +65,12 @@ WSGI_APPLICATION = "car_owners.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",  # as a next step I suggest to implement postgresql db
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "railway",
+        "USER": "postgres",
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": "containers-us-west-50.railway.app",
+        "PORT": "6557",
     }
 }
 
