@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, List
+
 from django.db.models import Q, query_utils
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
+import django_filters
 
 request_type = rest_framework.request.Request
 response_type = rest_framework.response.Response
@@ -287,3 +289,39 @@ class CarViewSet(BaseViewSet):
         query_set = self.queryset.all().order_by(alphabetical_base)
         serializer = self.get_serializer(query_set, many=True)
         return Response(serializer.data)
+
+
+class TestFilterOwner(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_expr='iexact')
+    surname = django_filters.CharFilter(lookup_expr='iexact')
+
+    class Meta:
+        model = Owner
+        fields = ["id", "name", "surname", "phone"]
+
+
+class TestViewSetOwner(viewsets.ModelViewSet):
+    queryset = Owner.objects.all()
+    serializer_class = OwnerSerializer
+
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_class = TestFilterOwner
+
+
+
+
+class TestFilterCar(django_filters.FilterSet):
+    brand = django_filters.CharFilter(lookup_expr='iexact')
+    model = django_filters.CharFilter(lookup_expr='iexact')
+
+    class Meta:
+        model = Car
+        fields = ["id", "brand", "model", "production_date", "owner"]
+
+
+class TestViewSetCar(viewsets.ModelViewSet):
+    queryset = Car.objects.all()
+    serializer_class = CarSerializer
+
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_class = TestFilterCar
