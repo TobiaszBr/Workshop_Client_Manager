@@ -24,8 +24,6 @@ schema_view = get_schema_view(
 router = DefaultRouter()
 router.register(r"owners", views.OwnerViewSet, basename="owner")
 router.register(r"cars", views.CarViewSet, basename="car")
-router.register(r"test-owners", views.TestViewSetOwner, basename="test-owners")
-router.register(r"test-cars", views.TestViewSetCar, basename="test-cars")
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
