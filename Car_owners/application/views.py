@@ -7,6 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter
 import rest_framework.request
 from rest_framework.response import Response
 from .models import Owner, Car
@@ -304,9 +305,9 @@ class TestViewSetOwner(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
 
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, OrderingFilter]
     filterset_class = TestFilterOwner
-
+    ordering_fields = ["name", "surname"]
 
 
 
@@ -323,5 +324,10 @@ class TestViewSetCar(viewsets.ModelViewSet):
     queryset = Car.objects.all()
     serializer_class = CarSerializer
 
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, OrderingFilter]
     filterset_class = TestFilterCar
+    ordering_fields = ["brand", "model", "production_date"]
+
+    # spróbuj dodać jakąś dodatkową walidację wejścia w queryset z request params - np tak jak wyżej długość numeru tel, inny message dla walidacji daty produkcji itd
+    # Żeby było tożsame z tymi poprzednimi widokami?
+    # np gdy nie ma takiego elementu to nie dawaj pustej listy tylko message jak wcześniej
