@@ -38,3 +38,9 @@ class CarViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = CarFilter
     ordering_fields = ["brand", "model", "production_date"]
+
+# Brak messegy gdy nie ma danego obiekut w bazie tyko pusta lista jest wyświetlana - może to nie problem?
+# Gdy podam skjdghksj jako ordering to dostaję całą listę standardową zamiast jakiegoś błędu lub messega?
+# W Swaggerze nie mam np opisu jakie mam możliwości do wpisania w pola np dla ordering właśnie
+# Czy wg swagger bd do zrobienia tak jak poprzednio skoro tu nie mam żadnych dodatkowych funkcji?
+# NIe ma validacji np nr telefonu za krótki,
