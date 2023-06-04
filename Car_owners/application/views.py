@@ -1,3 +1,4 @@
+import datetime
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from re import search
@@ -88,3 +89,46 @@ class CarViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = CarFilter
     ordering_fields = ["brand", "model", "production_date"]
+
+    def request_validation(self, request):                                                  # hintsy
+        for key, value in request.query_params.items():
+            if key == "production_date":
+                production_date_as_date_object = datetime.datetime.strptime(value,
+                                                                       "%Y-%m-%d").date()
+
+                if production_date_as_date_object > datetime.date.today():
+                    return True, Response(
+                        {
+                            "production_date": "Production date cannot be from the future."}
+                    )
+            elif key == "ordering":
+                if value not in ["brand", "model", "production_date"]:
+                    ord_fields_string = ", ".join(["brand", "model", "production_date"])
+                    return True, Response(
+                        {
+                            "ordering": f"Ordering should be one of the following: {ord_fields_string}"
+                        }
+                    )
+
+
+        return False, Response({""})
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        # Additional request validation
+        validation_failed, response = self.request_validation(request)
+        if validation_failed:
+            return response
+
+        # Additional custom response, when no object found
+        if not serializer.data:
+            return Response("There is no car with given data")
+
+        return Response(serializer.data)
