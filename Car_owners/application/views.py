@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import datetime
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from re import search
 import rest_framework
 from rest_framework import viewsets
@@ -43,6 +45,11 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
     @abstractmethod
     def request_validation(self, request: request_type):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_swagger_parameters():
         pass
 
     def list(self, request: request_type, *args, **kwargs) -> response_type:
@@ -92,7 +99,8 @@ class OwnerViewSet(BaseViewSet):
                 if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", value):
                     return True, Response(
                         {
-                            f"{key}": f"{key} can contain only letters and '-' without whitespaces"
+                            f"{key}": f"{key} can contain only letters and '-' without "
+                                      f"whitespaces"
                         }
                     )
             elif key == "ordering":
@@ -100,11 +108,44 @@ class OwnerViewSet(BaseViewSet):
                     ord_fields_string = ", ".join(self.ordering_fields)
                     return True, Response(
                         {
-                            "ordering": f"Ordering should be one of the following: {ord_fields_string}"
+                            "ordering": f"Ordering should be one of the following: "
+                                        f"{ord_fields_string}"
                         }
                     )
 
         return False, Response({""})
+
+    @staticmethod
+    def get_swagger_parameters():
+        swagger_parameters_dict = swagger_parameters_dict = {
+            "id": "Owner's unique id number",
+            "name": "Owner's name",
+            "surname": "Owner's surname",
+            "phone": "Owner's phone number - 9 digits",
+        }
+        manual_parameters_list = []
+        for parameter_name, description in swagger_parameters_dict.items():
+            if parameter_name != "id":
+                field_type = openapi.TYPE_STRING
+            else:
+                field_type = openapi.TYPE_INTEGER
+
+            parameter = openapi.Parameter(
+                parameter_name,
+                in_=openapi.IN_QUERY,
+                description=f"{description}",
+                type=field_type,
+            )
+
+            manual_parameters_list.append(parameter)
+
+        swagger_auto_schema_params_dict = {"manual_parameters": manual_parameters_list}
+
+        return swagger_auto_schema_params_dict
+
+    @swagger_auto_schema(**get_swagger_parameters())
+    def list(self, request: request_type, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class CarViewSet(BaseViewSet):
@@ -128,7 +169,8 @@ class CarViewSet(BaseViewSet):
                 if production_date_as_date_object > datetime.date.today():
                     return True, Response(
                         {
-                            "production_date": "Production date cannot be from the future."
+                            "production_date": "Production date cannot be from the "
+                                               "future."
                         }
                     )
             elif key == "ordering":
@@ -136,8 +178,42 @@ class CarViewSet(BaseViewSet):
                     ord_fields_string = ", ".join(self.ordering_fields)
                     return True, Response(
                         {
-                            "ordering": f"Ordering should be one of the following: {ord_fields_string}"
+                            "ordering": f"Ordering should be one of the following: "
+                                        f"{ord_fields_string}"
                         }
                     )
 
         return False, Response({""})
+
+    @staticmethod
+    def get_swagger_parameters():
+        swagger_parameters_dict = swagger_parameters_dict = {
+            "id": "Car's unique id number",
+            "brand": "Car's brand",
+            "model": "Car's model",
+            "production_date": "Car's production date in YYYY-MM-DD format",
+            "owner": "Car owner's id",
+        }
+        manual_parameters_list = []
+        for parameter_name, description in swagger_parameters_dict.items():
+            if parameter_name not in ["id", "owner"]:
+                field_type = openapi.TYPE_STRING
+            else:
+                field_type = openapi.TYPE_INTEGER
+
+            parameter = openapi.Parameter(
+                parameter_name,
+                in_=openapi.IN_QUERY,
+                description=f"{description}",
+                type=field_type,
+            )
+
+            manual_parameters_list.append(parameter)
+
+        swagger_auto_schema_params_dict = {"manual_parameters": manual_parameters_list}
+
+        return swagger_auto_schema_params_dict
+
+    @swagger_auto_schema(**get_swagger_parameters())
+    def list(self, request: request_type, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
