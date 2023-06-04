@@ -3,11 +3,16 @@ import datetime
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from re import search
+import rest_framework
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
+
+
+request_type = rest_framework.request.Request
+response_type = rest_framework.response.Response
 
 
 class OwnerFilter(django_filters.FilterSet):
@@ -27,13 +32,19 @@ class CarFilter(django_filters.FilterSet):
         model = Car
         fields = ["id", "brand", "model", "production_date", "owner"]
 
+
 class BaseViewSet(ABC, viewsets.ModelViewSet):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
+        self.model_class_name = ""
 
     @abstractmethod
-    def request_validation(self, request):
+    def request_validation(self, request: request_type):
         pass
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request: request_type, *args, **kwargs) -> response_type:
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -49,20 +60,23 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
         # Additional custom response, when no object found
         if not serializer.data:
-            return Response("There is no OBJECT with given data")
+            return Response(f"There is no {self.model_class_name} with given data")
 
         return Response(serializer.data)
 
 
 class OwnerViewSet(BaseViewSet):
-    queryset = Owner.objects.all()
-    serializer_class = OwnerSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_class = OwnerFilter
-    ordering_fields = ["name", "surname"]
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-    def request_validation(self, request):                                                  # hintsy
+        self.queryset = Owner.objects.all()
+        self.serializer_class = OwnerSerializer
+        self.filterset_class = OwnerFilter
+        self.ordering_fields = ["name", "surname"]
+        self.model_class_name = "Owner"
+
+    def request_validation(self, request: request_type) -> (bool, response_type):
         for key, value in request.query_params.items():
             if key == "phone":
                 if search("[^0-9]", value):
@@ -79,47 +93,42 @@ class OwnerViewSet(BaseViewSet):
                         }
                     )
             elif key == "ordering":
-                if value not in ["name", "surname"]:
-                    ord_fields_string = ", ".join(["name", "surname"])
+                if value not in self.ordering_fields:
+                    ord_fields_string = ", ".join(self.ordering_fields)
                     return True, Response(
                         {
                             "ordering": f"Ordering should be one of the following: {ord_fields_string}"
                         }
                     )
-
-        return False, Response({""})                                                # hintsy
-
-
-
-
-class CarViewSet(BaseViewSet):
-    queryset = Car.objects.all()
-    serializer_class = CarSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_class = CarFilter
-    ordering_fields = ["brand", "model", "production_date"]
-
-    def request_validation(self, request):                                                  # hintsy
-        for key, value in request.query_params.items():
-            if key == "production_date":
-                production_date_as_date_object = datetime.datetime.strptime(value,
-                                                                       "%Y-%m-%d").date()
-
-                if production_date_as_date_object > datetime.date.today():
-                    return True, Response(
-                        {
-                            "production_date": "Production date cannot be from the future."}
-                    )
-            elif key == "ordering":
-                if value not in ["brand", "model", "production_date"]:
-                    ord_fields_string = ", ".join(["brand", "model", "production_date"])
-                    return True, Response(
-                        {
-                            "ordering": f"Ordering should be one of the following: {ord_fields_string}"
-                        }
-                    )
-
 
         return False, Response({""})
 
 
+class CarViewSet(BaseViewSet):
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.queryset = Car.objects.all()
+        self.serializer_class = CarSerializer
+        self.filterset_class = CarFilter
+        self.ordering_fields = ["brand", "model", "production_date"]
+        self.model_class_name = "Car"
+
+    def request_validation(self, request: request_type) -> (bool, response_type):
+        for key, value in request.query_params.items():
+            if key == "production_date":
+                production_date_as_date_object = datetime.datetime.strptime(value, "%Y-%m-%d").date()
+
+                if production_date_as_date_object > datetime.date.today():
+                    return True, Response({"production_date": "Production date cannot be from the future."})
+            elif key == "ordering":
+                if value not in self.ordering_fields:
+                    ord_fields_string = ", ".join(self.ordering_fields)
+                    return True, Response(
+                        {
+                            "ordering": f"Ordering should be one of the following: {ord_fields_string}"
+                        }
+                    )
+
+        return False, Response({""})
