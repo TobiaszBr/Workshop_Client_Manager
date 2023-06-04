@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import datetime
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -26,8 +27,34 @@ class CarFilter(django_filters.FilterSet):
         model = Car
         fields = ["id", "brand", "model", "production_date", "owner"]
 
+class BaseViewSet(ABC, viewsets.ModelViewSet):
 
-class OwnerViewSet(viewsets.ModelViewSet):
+    @abstractmethod
+    def request_validation(self, request):
+        pass
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        # Additional request validation
+        validation_failed, response = self.request_validation(request)
+        if validation_failed:
+            return response
+
+        # Additional custom response, when no object found
+        if not serializer.data:
+            return Response("There is no OBJECT with given data")
+
+        return Response(serializer.data)
+
+
+class OwnerViewSet(BaseViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -62,28 +89,10 @@ class OwnerViewSet(viewsets.ModelViewSet):
 
         return False, Response({""})                                                # hintsy
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-
-        # Additional request validation
-        validation_failed, response = self.request_validation(request)
-        if validation_failed:
-            return response
-
-        # Additional custom response, when no object found
-        if not serializer.data:
-            return Response("There is no owner with given data")
-
-        return Response(serializer.data)
 
 
-class CarViewSet(viewsets.ModelViewSet):
+
+class CarViewSet(BaseViewSet):
     queryset = Car.objects.all()
     serializer_class = CarSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -113,22 +122,4 @@ class CarViewSet(viewsets.ModelViewSet):
 
         return False, Response({""})
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
-
-        # Additional request validation
-        validation_failed, response = self.request_validation(request)
-        if validation_failed:
-            return response
-
-        # Additional custom response, when no object found
-        if not serializer.data:
-            return Response("There is no car with given data")
-
-        return Response(serializer.data)
