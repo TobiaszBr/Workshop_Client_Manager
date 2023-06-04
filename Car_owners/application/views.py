@@ -21,7 +21,7 @@ class OwnerFilter(django_filters.FilterSet):
 
     class Meta:
         model = Owner
-        fields = ["id", "name", "surname", "phone"]
+        fields = "__all__"
 
 
 class CarFilter(django_filters.FilterSet):
@@ -30,7 +30,7 @@ class CarFilter(django_filters.FilterSet):
 
     class Meta:
         model = Car
-        fields = ["id", "brand", "model", "production_date", "owner"]
+        fields = "__all__"
 
 
 class BaseViewSet(ABC, viewsets.ModelViewSet):
@@ -38,7 +38,8 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         super().__init__(*args, **kwargs)
 
         self.filter_backends = [DjangoFilterBackend, OrderingFilter]
-        self.model_class_name = ""
+        self.model_class = None
+        self.model_class_name = None
 
     @abstractmethod
     def request_validation(self, request: request_type):
@@ -66,7 +67,6 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
 
 class OwnerViewSet(BaseViewSet):
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -74,13 +74,16 @@ class OwnerViewSet(BaseViewSet):
         self.serializer_class = OwnerSerializer
         self.filterset_class = OwnerFilter
         self.ordering_fields = ["name", "surname"]
-        self.model_class_name = "Owner"
+        self.model_class = Owner
+        self.model_class_name = self.model_class._meta.object_name
 
     def request_validation(self, request: request_type) -> (bool, response_type):
         for key, value in request.query_params.items():
             if key == "phone":
                 if search("[^0-9]", value):
-                    return True, Response({"phone": "Phone number can contain only digits"})
+                    return True, Response(
+                        {"phone": "Phone number can contain only digits"}
+                    )
                 elif len(value) > 9:
                     return True, Response({"phone": "Phone number is too long"})
                 elif len(value) < 9:
@@ -105,7 +108,6 @@ class OwnerViewSet(BaseViewSet):
 
 
 class CarViewSet(BaseViewSet):
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -113,15 +115,22 @@ class CarViewSet(BaseViewSet):
         self.serializer_class = CarSerializer
         self.filterset_class = CarFilter
         self.ordering_fields = ["brand", "model", "production_date"]
-        self.model_class_name = "Car"
+        self.model_class = Car
+        self.model_class_name = self.model_class._meta.object_name
 
     def request_validation(self, request: request_type) -> (bool, response_type):
         for key, value in request.query_params.items():
             if key == "production_date":
-                production_date_as_date_object = datetime.datetime.strptime(value, "%Y-%m-%d").date()
+                production_date_as_date_object = datetime.datetime.strptime(
+                    value, "%Y-%m-%d"
+                ).date()
 
                 if production_date_as_date_object > datetime.date.today():
-                    return True, Response({"production_date": "Production date cannot be from the future."})
+                    return True, Response(
+                        {
+                            "production_date": "Production date cannot be from the future."
+                        }
+                    )
             elif key == "ordering":
                 if value not in self.ordering_fields:
                     ord_fields_string = ", ".join(self.ordering_fields)
