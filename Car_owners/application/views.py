@@ -33,6 +33,34 @@ class OwnerViewSet(viewsets.ModelViewSet):
     filterset_class = OwnerFilter
     ordering_fields = ["name", "surname"]
 
+
+    def request_validation(self, request):                                                  # hintsy
+        for key, value in request.query_params.items():
+            if key == "phone":
+                if search("[^0-9]", value):
+                    return True, Response({"phone": "Phone number can contain only digits"})
+                elif len(value) > 9:
+                    return True, Response({"phone": "Phone number is too long"})
+                elif len(value) < 9:
+                    return True, Response({"phone": "Phone number is too short"})
+            elif key == "name" or key == "surname":
+                if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", value):
+                    return True, Response(
+                        {
+                            f"{key}": f"{key} can contain only letters and '-' without whitespaces"
+                        }
+                    )
+            elif key == "ordering":
+                if value not in ["name", "surname"]:
+                    ord_fields_string = ", ".join(["name", "surname"])
+                    return True, Response(
+                        {
+                            "ordering": f"Ordering should be one of the following: {ord_fields_string}"
+                        }
+                    )
+
+        return False, Response({""})                                                # hintsy
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
@@ -42,39 +70,12 @@ class OwnerViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
 
-        if (phone := request.query_params.get("phone", "123456789")) != "123456789":
-            if search("[^0-9]", phone):
-                return Response({"phone": "Phone number can contain only digits"})
-            elif len(phone) > 9:
-                return Response({"phone": "Phone number is too long"})
-            elif len(phone) < 9:
-                return Response({"phone": "Phone number is too short"})
+        # Additional request validation
+        validation_failed, response = self.request_validation(request)
+        if validation_failed:
+            return response
 
-        if (name := request.query_params.get("name", "dummy")) != "dummy":
-            if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", name):
-                return Response(
-                    {
-                        "name": "Name can contain only letters and '-' without whitespaces"
-                    }
-                )
-
-        if (surname := request.query_params.get("surname", "dummy")) != "dummy":
-            if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", surname):
-                return Response(
-                    {
-                        "surname": "surname can contain only letters and '-' without whitespaces"
-                    }
-                )
-
-        if (ordering := request.query_params.get("ordering", "dummy")) != "dummy":
-            if ordering not in ["name", "surname"]:
-                ord_fields_string = ", ".join(["name", "surname"])
-                return Response(
-                    {
-                        "ordering": f"Ordering should be one of the following: {ord_fields_string}"
-                    }
-                )
-
+        # Additional custom response, when no object found
         if not serializer.data:
             return Response("There is no owner with given data")
 
