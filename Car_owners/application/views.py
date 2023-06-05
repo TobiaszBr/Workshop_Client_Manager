@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import datetime
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from re import search
@@ -15,6 +16,16 @@ from .serializers import OwnerSerializer, CarSerializer
 
 request_type = rest_framework.request.Request
 response_type = rest_framework.response.Response
+swagger_decorator_owner = swagger_auto_schema(manual_parameters=[openapi.Parameter(
+                "id",
+                in_=openapi.IN_QUERY,
+                description="Owner's unique id number",
+                type=openapi.TYPE_INTEGER,)])
+swagger_decorator_car = swagger_auto_schema(manual_parameters=[openapi.Parameter(
+                "id",
+                in_=openapi.IN_QUERY,
+                description="Car's unique id number",
+                type=openapi.TYPE_INTEGER,)])
 
 
 class OwnerFilter(django_filters.FilterSet):
@@ -73,6 +84,10 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@method_decorator(name = "retrieve", decorator = swagger_decorator_owner)
+@method_decorator(name = "update", decorator = swagger_decorator_owner)
+@method_decorator(name = "partial_update", decorator = swagger_decorator_owner)
+@method_decorator(name = "destroy", decorator = swagger_decorator_owner)
 class OwnerViewSet(BaseViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -147,7 +162,23 @@ class OwnerViewSet(BaseViewSet):
     def list(self, request: request_type, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
+    """
+    @swagger_auto_schema(manual_parameters=[openapi.Parameter(
+                "id",
+                in_=openapi.IN_QUERY,
+                description="Owner's unique id number",
+                type=openapi.TYPE_INTEGER,
+            )])
+    """
+    # jak zapewnić ten opis dla id dla każdej metody?
+    # używając tylko np def retrieve i tam return super().retireve to się zawiesza - szuka w nieskończoność..
+    # poczytać dokumentację
 
+
+@method_decorator(name = "retrieve", decorator = swagger_decorator_car)
+@method_decorator(name = "update", decorator = swagger_decorator_car)
+@method_decorator(name = "partial_update", decorator = swagger_decorator_car)
+@method_decorator(name = "destroy", decorator = swagger_decorator_car)
 class CarViewSet(BaseViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -192,7 +223,7 @@ class CarViewSet(BaseViewSet):
             "brand": "Car's brand",
             "model": "Car's model",
             "production_date": "Car's production date in YYYY-MM-DD format",
-            "owner": "Car owner's id",
+            "owner": "Car owner's unique id number",
         }
         manual_parameters_list = []
         for parameter_name, description in swagger_parameters_dict.items():
