@@ -40,7 +40,7 @@ class OwnerFilter(django_filters.FilterSet):
 
     class Meta:
         model = Owner
-        fields = "__all__"
+        fields = ["id", "name", "surname", "phone"]
 
 
 class CarFilter(django_filters.FilterSet):
@@ -49,7 +49,7 @@ class CarFilter(django_filters.FilterSet):
 
     class Meta:
         model = Car
-        fields = "__all__"
+        fields = ["id", "brand", "model", "production_date", "owner"]
 
 
 class BaseViewSet(ABC, viewsets.ModelViewSet):
