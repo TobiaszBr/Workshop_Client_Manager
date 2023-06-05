@@ -16,26 +16,22 @@ from .serializers import OwnerSerializer, CarSerializer
 
 request_type = rest_framework.request.Request
 response_type = rest_framework.response.Response
-swagger_decorator_owner = swagger_auto_schema(
-    manual_parameters=[
+swagger_decorator_owner = swagger_auto_schema(manual_parameters=[
         openapi.Parameter(
             "id",
-            in_=openapi.IN_QUERY,
+            in_=openapi.IN_PATH,
             description="Owner's unique id number",
             type=openapi.TYPE_INTEGER,
         )
-    ]
-)
-swagger_decorator_car = swagger_auto_schema(
-    manual_parameters=[
+    ])
+swagger_decorator_car = swagger_auto_schema(manual_parameters=[
         openapi.Parameter(
             "id",
-            in_=openapi.IN_QUERY,
+            in_=openapi.IN_PATH,
             description="Car's unique id number",
             type=openapi.TYPE_INTEGER,
         )
-    ]
-)
+    ])
 
 
 class OwnerFilter(django_filters.FilterSet):
