@@ -16,16 +16,26 @@ from .serializers import OwnerSerializer, CarSerializer
 
 request_type = rest_framework.request.Request
 response_type = rest_framework.response.Response
-swagger_decorator_owner = swagger_auto_schema(manual_parameters=[openapi.Parameter(
-                "id",
-                in_=openapi.IN_QUERY,
-                description="Owner's unique id number",
-                type=openapi.TYPE_INTEGER,)])
-swagger_decorator_car = swagger_auto_schema(manual_parameters=[openapi.Parameter(
-                "id",
-                in_=openapi.IN_QUERY,
-                description="Car's unique id number",
-                type=openapi.TYPE_INTEGER,)])
+swagger_decorator_owner = swagger_auto_schema(
+    manual_parameters=[
+        openapi.Parameter(
+            "id",
+            in_=openapi.IN_QUERY,
+            description="Owner's unique id number",
+            type=openapi.TYPE_INTEGER,
+        )
+    ]
+)
+swagger_decorator_car = swagger_auto_schema(
+    manual_parameters=[
+        openapi.Parameter(
+            "id",
+            in_=openapi.IN_QUERY,
+            description="Car's unique id number",
+            type=openapi.TYPE_INTEGER,
+        )
+    ]
+)
 
 
 class OwnerFilter(django_filters.FilterSet):
@@ -84,10 +94,10 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@method_decorator(name = "retrieve", decorator = swagger_decorator_owner)
-@method_decorator(name = "update", decorator = swagger_decorator_owner)
-@method_decorator(name = "partial_update", decorator = swagger_decorator_owner)
-@method_decorator(name = "destroy", decorator = swagger_decorator_owner)
+@method_decorator(name="retrieve", decorator=swagger_decorator_owner)
+@method_decorator(name="update", decorator=swagger_decorator_owner)
+@method_decorator(name="partial_update", decorator=swagger_decorator_owner)
+@method_decorator(name="destroy", decorator=swagger_decorator_owner)
 class OwnerViewSet(BaseViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -115,7 +125,7 @@ class OwnerViewSet(BaseViewSet):
                     return True, Response(
                         {
                             f"{key}": f"{key} can contain only letters and '-' without "
-                                      f"whitespaces"
+                            f"whitespaces"
                         }
                     )
             elif key == "ordering":
@@ -124,7 +134,7 @@ class OwnerViewSet(BaseViewSet):
                     return True, Response(
                         {
                             "ordering": f"Ordering should be one of the following: "
-                                        f"{ord_fields_string}"
+                            f"{ord_fields_string}"
                         }
                     )
 
@@ -162,23 +172,11 @@ class OwnerViewSet(BaseViewSet):
     def list(self, request: request_type, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    """
-    @swagger_auto_schema(manual_parameters=[openapi.Parameter(
-                "id",
-                in_=openapi.IN_QUERY,
-                description="Owner's unique id number",
-                type=openapi.TYPE_INTEGER,
-            )])
-    """
-    # jak zapewnić ten opis dla id dla każdej metody?
-    # używając tylko np def retrieve i tam return super().retireve to się zawiesza - szuka w nieskończoność..
-    # poczytać dokumentację
 
-
-@method_decorator(name = "retrieve", decorator = swagger_decorator_car)
-@method_decorator(name = "update", decorator = swagger_decorator_car)
-@method_decorator(name = "partial_update", decorator = swagger_decorator_car)
-@method_decorator(name = "destroy", decorator = swagger_decorator_car)
+@method_decorator(name="retrieve", decorator=swagger_decorator_car)
+@method_decorator(name="update", decorator=swagger_decorator_car)
+@method_decorator(name="partial_update", decorator=swagger_decorator_car)
+@method_decorator(name="destroy", decorator=swagger_decorator_car)
 class CarViewSet(BaseViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -201,7 +199,7 @@ class CarViewSet(BaseViewSet):
                     return True, Response(
                         {
                             "production_date": "Production date cannot be from the "
-                                               "future."
+                            "future."
                         }
                     )
             elif key == "ordering":
@@ -210,7 +208,7 @@ class CarViewSet(BaseViewSet):
                     return True, Response(
                         {
                             "ordering": f"Ordering should be one of the following: "
-                                        f"{ord_fields_string}"
+                            f"{ord_fields_string}"
                         }
                     )
 
