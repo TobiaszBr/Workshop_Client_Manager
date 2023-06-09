@@ -12,7 +12,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     "*"
-]  # you can try to prepare for future separate frontend app here, read about cors and ssl
+]
 
 
 # Application definition
@@ -115,6 +115,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-SESSION_COOKIE_SECURE = False                       # You added those three variables, why?
+SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
