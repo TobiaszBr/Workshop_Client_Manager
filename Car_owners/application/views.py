@@ -6,32 +6,17 @@ from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from re import search
-import rest_framework
+from rest_framework.request import Request
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
+from .decortors import swagger_decorator_owner, swagger_decorator_car
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
 
-request_type = rest_framework.request.Request
-response_type = rest_framework.response.Response
-swagger_decorator_owner = swagger_auto_schema(manual_parameters=[
-        openapi.Parameter(
-            "id",
-            in_=openapi.IN_PATH,
-            description="Owner's unique id number",
-            type=openapi.TYPE_INTEGER,
-        )
-    ])
-swagger_decorator_car = swagger_auto_schema(manual_parameters=[
-        openapi.Parameter(
-            "id",
-            in_=openapi.IN_PATH,
-            description="Car's unique id number",
-            type=openapi.TYPE_INTEGER,
-        )
-    ])
+request_type = Request
+response_type = Response
 
 
 class OwnerFilter(django_filters.FilterSet):
@@ -72,16 +57,16 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
     def list(self, request: request_type, *args, **kwargs) -> response_type:
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-        if page is not None:
+
+        # Additional request validation
+        if response := self.request_validation(request):
+            return response
+
+        if page:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
-
-        # Additional request validation
-        validation_failed, response = self.request_validation(request)
-        if validation_failed:
-            return response
 
         # Additional custom response, when no object found
         if not serializer.data:
@@ -105,20 +90,20 @@ class OwnerViewSet(BaseViewSet):
         self.model_class = Owner
         self.model_class_name = self.model_class._meta.object_name
 
-    def request_validation(self, request: request_type) -> (bool, response_type):
+    def request_validation(self, request: request_type) -> response_type:
         for key, value in request.query_params.items():
             if key == "phone":
                 if search("[^0-9]", value):
-                    return True, Response(
+                    return Response(
                         {"phone": "Phone number can contain only digits"}
                     )
                 elif len(value) > 9:
-                    return True, Response({"phone": "Phone number is too long"})
+                    return Response({"phone": "Phone number is too long"})
                 elif len(value) < 9:
-                    return True, Response({"phone": "Phone number is too short"})
+                    return Response({"phone": "Phone number is too short"})
             elif key == "name" or key == "surname":
                 if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", value):
-                    return True, Response(
+                    return Response(
                         {
                             f"{key}": f"{key} can contain only letters and '-' without "
                             f"whitespaces"
@@ -127,18 +112,16 @@ class OwnerViewSet(BaseViewSet):
             elif key == "ordering":
                 if value not in self.ordering_fields:
                     ord_fields_string = ", ".join(self.ordering_fields)
-                    return True, Response(
+                    return Response(
                         {
                             "ordering": f"Ordering should be one of the following: "
                             f"{ord_fields_string}"
                         }
                     )
 
-        return False, Response({""})
-
     @staticmethod
     def get_swagger_parameters():
-        swagger_parameters_dict = swagger_parameters_dict = {
+        swagger_parameters_dict = {
             "id": "Owner's unique id number",
             "name": "Owner's name",
             "surname": "Owner's surname",
@@ -184,7 +167,7 @@ class CarViewSet(BaseViewSet):
         self.model_class = Car
         self.model_class_name = self.model_class._meta.object_name
 
-    def request_validation(self, request: request_type) -> (bool, response_type):
+    def request_validation(self, request: request_type) -> response_type:
         for key, value in request.query_params.items():
             if key == "production_date":
                 production_date_as_date_object = datetime.datetime.strptime(
@@ -192,7 +175,7 @@ class CarViewSet(BaseViewSet):
                 ).date()
 
                 if production_date_as_date_object > datetime.date.today():
-                    return True, Response(
+                    return Response(
                         {
                             "production_date": "Production date cannot be from the "
                             "future."
@@ -201,18 +184,16 @@ class CarViewSet(BaseViewSet):
             elif key == "ordering":
                 if value not in self.ordering_fields:
                     ord_fields_string = ", ".join(self.ordering_fields)
-                    return True, Response(
+                    return Response(
                         {
                             "ordering": f"Ordering should be one of the following: "
                             f"{ord_fields_string}"
                         }
                     )
 
-        return False, Response({""})
-
     @staticmethod
     def get_swagger_parameters():
-        swagger_parameters_dict = swagger_parameters_dict = {
+        swagger_parameters_dict = {
             "id": "Car's unique id number",
             "brand": "Car's brand",
             "model": "Car's model",
