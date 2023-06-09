@@ -20,6 +20,18 @@ class OwnerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"name": error_text})
         elif search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", data["surname"]):
             raise serializers.ValidationError({"surname": error_text})
+        elif search("[^0-9]", data["phone"]):
+            raise serializers.ValidationError(
+                {"phone": "Phone number can contain only digits"}
+            )
+        elif len(data["phone"]) < 9:
+            raise serializers.ValidationError(
+                {"phone": "The phone number is too short - 9 digits required"}
+            )
+        elif len(data["phone"]) > 9:
+            raise serializers.ValidationError(
+                {"phone": "The phone number is too long - 9 digits required"}
+            )
         return data
 
 

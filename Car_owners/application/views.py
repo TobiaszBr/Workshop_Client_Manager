@@ -1,108 +1,134 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Dict, List
-from django.db.models import Q, query_utils
+import datetime
+import django_filters
+from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from re import search
+from rest_framework.request import Request
 from rest_framework import viewsets
-from rest_framework.decorators import action
-import rest_framework.request
+from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
+from .decortors import swagger_decorator_owner, swagger_decorator_car
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
 
-request_type = rest_framework.request.Request
-response_type = rest_framework.response.Response
-q_type = query_utils.Q
+request_type = Request
+response_type = Response
+
+
+class OwnerFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_expr="iexact")
+    surname = django_filters.CharFilter(lookup_expr="iexact")
+
+    class Meta:
+        model = Owner
+        fields = ["id", "name", "surname", "phone"]
+
+
+class CarFilter(django_filters.FilterSet):
+    brand = django_filters.CharFilter(lookup_expr="iexact")
+    model = django_filters.CharFilter(lookup_expr="iexact")
+
+    class Meta:
+        model = Car
+        fields = ["id", "brand", "model", "production_date", "owner"]
 
 
 class BaseViewSet(ABC, viewsets.ModelViewSet):
-    """
-    This viewset automatically provides 'list', 'create', 'retrieve',
-    'update', and 'destroy' actions.
-    """
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
         self.model_class = None
-        self.model_class_name = "object"
-        self.queryset = None
-        self.case_insensitive_fields = []
-
-    def response_when_no_object_found(self, request: request_type) -> response_type:
-        respond = f"There is no {self.model_class_name} with"
-        for key, value in request.query_params.items():
-            respond += f" {key}: {value}"
-
-        return Response(f"{respond}.")
-
-    def get_filter_list(self, request: request_type) -> List[q_type]:
-        filter_list = []
-        model_fields_names_list = [
-            element.name for element in self.model_class._meta.get_fields()
-        ]
-
-        for field in model_fields_names_list:
-            if field in request.query_params.keys():
-                parameters_dict = {}
-                if field in self.case_insensitive_fields:
-                    parameters_dict[f"{field}__iexact"] = request.query_params[field]
-                else:
-                    parameters_dict[field] = request.query_params[field]
-
-                q = Q(**parameters_dict)
-                filter_list.append(q)
-
-        return filter_list
+        self.model_class_name = None
 
     @abstractmethod
-    def additional_validation_check(self):
+    def request_validation(self, request: request_type):
         pass
-
-    # additional action functions.
-    @abstractmethod
-    def objects_with_the_given_data(self):
-        pass
-
-    @abstractmethod
-    def objects_in_alphabetical_order(self):
-        pass
-
-
-class OwnerViewSet(BaseViewSet):
-    serializer_class = OwnerSerializer
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        self.model_class = Owner
-        self.model_class_name = self.model_class._meta.object_name
-        self.queryset = self.model_class.objects.all()
-        self.case_insensitive_fields = ["name", "surname"]
-
-    def additional_validation_check(
-        self, request_data_dict: Dict[str, str]
-    ) -> (bool, response_type):
-        phone_number = request_data_dict.get("phone", "000000000")
-        if len(phone_number) < 9:
-            return True, Response({"Phone number is to short."})
-        elif len(phone_number) > 9:
-            return True, Response({"Phone number is to long."})
-        else:
-            return False, Response({""})
 
     @staticmethod
-    def get_swagger_search_parameters():
-        swagger_search_parameters_dict = {
+    @abstractmethod
+    def get_swagger_parameters():
+        pass
+
+    def list(self, request: request_type, *args, **kwargs) -> response_type:
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+
+        # Additional request validation
+        if response := self.request_validation(request):
+            return response
+
+        if page:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        # Additional custom response, when no object found
+        if not serializer.data:
+            return Response(f"There is no {self.model_class_name} with given data")
+
+        return Response(serializer.data)
+
+
+@method_decorator(name="retrieve", decorator=swagger_decorator_owner)
+@method_decorator(name="update", decorator=swagger_decorator_owner)
+@method_decorator(name="partial_update", decorator=swagger_decorator_owner)
+@method_decorator(name="destroy", decorator=swagger_decorator_owner)
+class OwnerViewSet(BaseViewSet):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.queryset = Owner.objects.all()
+        self.serializer_class = OwnerSerializer
+        self.filterset_class = OwnerFilter
+        self.ordering_fields = ["name", "surname"]
+        self.model_class = Owner
+        self.model_class_name = self.model_class._meta.object_name
+
+    def request_validation(self, request: request_type) -> response_type:
+        for key, value in request.query_params.items():
+            if key == "phone":
+                if search("[^0-9]", value):
+                    return Response(
+                        {"phone": "Phone number can contain only digits"}
+                    )
+                elif len(value) > 9:
+                    return Response({"phone": "Phone number is too long"})
+                elif len(value) < 9:
+                    return Response({"phone": "Phone number is too short"})
+            elif key == "name" or key == "surname":
+                if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", value):
+                    return Response(
+                        {
+                            f"{key}": f"{key} can contain only letters and '-' without "
+                            f"whitespaces"
+                        }
+                    )
+            elif key == "ordering":
+                if value not in self.ordering_fields:
+                    ord_fields_string = ", ".join(self.ordering_fields)
+                    return Response(
+                        {
+                            "ordering": f"Ordering should be one of the following: "
+                            f"{ord_fields_string}"
+                        }
+                    )
+
+    @staticmethod
+    def get_swagger_parameters():
+        swagger_parameters_dict = {
             "id": "Owner's unique id number",
             "name": "Owner's name",
             "surname": "Owner's surname",
             "phone": "Owner's phone number - 9 digits",
         }
         manual_parameters_list = []
-        for parameter_name, description in swagger_search_parameters_dict.items():
+        for parameter_name, description in swagger_parameters_dict.items():
             if parameter_name != "id":
                 field_type = openapi.TYPE_STRING
             else:
@@ -121,91 +147,65 @@ class OwnerViewSet(BaseViewSet):
 
         return swagger_auto_schema_params_dict
 
-    # additional action functions.
-    @swagger_auto_schema(**get_swagger_search_parameters())
-    @action(detail=False, url_path="search")
-    def objects_with_the_given_data(self, request: request_type) -> response_type:
-        # Additional validation
-        validation_error, response = self.additional_validation_check(
-            request.query_params
-        )
-        if validation_error:
-            return response
-
-        filter_list = self.get_filter_list(request)
-        queryset = self.queryset.filter(*filter_list)
-        serializer = self.get_serializer(queryset, many=True)
-
-        # Return data or change first letters
-        if queryset:
-            return Response(serializer.data)
-        else:
-            return self.response_when_no_object_found(request)
-
-    @action(
-        detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[name surname]+)"
-    )
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                "alphabetical_base",
-                in_=openapi.IN_PATH,
-                description="Select base of alphabetical order: name or surname",
-                type=openapi.TYPE_STRING,
-            )
-        ]
-    )
-    def objects_in_alphabetical_order(
-        self, request: request_type, alphabetical_base: str
-    ) -> response_type:
-        query_set = self.queryset.all().order_by(alphabetical_base)
-        serializer = self.get_serializer(query_set, many=True)
-        return Response(serializer.data)
+    @swagger_auto_schema(**get_swagger_parameters())
+    def list(self, request: request_type, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
+@method_decorator(name="retrieve", decorator=swagger_decorator_car)
+@method_decorator(name="update", decorator=swagger_decorator_car)
+@method_decorator(name="partial_update", decorator=swagger_decorator_car)
+@method_decorator(name="destroy", decorator=swagger_decorator_car)
 class CarViewSet(BaseViewSet):
-    serializer_class = CarSerializer
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+        self.queryset = Car.objects.all()
+        self.serializer_class = CarSerializer
+        self.filterset_class = CarFilter
+        self.ordering_fields = ["brand", "model", "production_date"]
         self.model_class = Car
         self.model_class_name = self.model_class._meta.object_name
-        self.queryset = self.model_class.objects.all()
-        self.case_insensitive_fields = ["brand", "model"]
 
-    def additional_validation_check(
-        self, request_data_dict: Dict[str, str]
-    ) -> (bool, response_type):
-        # Validate the production date variable
-        date_string = request_data_dict.get("production_date", "2000-01-01")
-        try:
-            date_object = datetime.strptime(date_string, "%Y-%m-%d")
-        except ValueError:
-            return True, Response(
-                {"Date out of range or wrong date format - must be YYYY-MM-DD."}
-            )
+    def request_validation(self, request: request_type) -> response_type:
+        for key, value in request.query_params.items():
+            if key == "production_date":
+                production_date_as_date_object = datetime.datetime.strptime(
+                    value, "%Y-%m-%d"
+                ).date()
 
-        return False, Response({""})
+                if production_date_as_date_object > datetime.date.today():
+                    return Response(
+                        {
+                            "production_date": "Production date cannot be from the "
+                            "future."
+                        }
+                    )
+            elif key == "ordering":
+                if value not in self.ordering_fields:
+                    ord_fields_string = ", ".join(self.ordering_fields)
+                    return Response(
+                        {
+                            "ordering": f"Ordering should be one of the following: "
+                            f"{ord_fields_string}"
+                        }
+                    )
 
     @staticmethod
-    def get_swagger_search_parameters():
-        swagger_search_parameters_dict = {
+    def get_swagger_parameters():
+        swagger_parameters_dict = {
             "id": "Car's unique id number",
             "brand": "Car's brand",
             "model": "Car's model",
             "production_date": "Car's production date in YYYY-MM-DD format",
-            "owner": "Car owner's id",
+            "owner": "Car owner's unique id number",
         }
-
         manual_parameters_list = []
-        for parameter_name, description in swagger_search_parameters_dict.items():
-            if parameter_name in ["id", "owner"]:
-                field_type = openapi.TYPE_INTEGER
-            elif parameter_name == "production_date":
-                field_type = openapi.FORMAT_DATE
-            else:
+        for parameter_name, description in swagger_parameters_dict.items():
+            if parameter_name not in ["id", "owner"]:
                 field_type = openapi.TYPE_STRING
+            else:
+                field_type = openapi.TYPE_INTEGER
 
             parameter = openapi.Parameter(
                 parameter_name,
@@ -220,70 +220,6 @@ class CarViewSet(BaseViewSet):
 
         return swagger_auto_schema_params_dict
 
-    # additional action functions.
-    @swagger_auto_schema(**get_swagger_search_parameters())
-    @action(detail=False, url_path="search")
-    def objects_with_the_given_data(self, request: request_type) -> response_type:
-        # Additional validation
-        validation_error, response = self.additional_validation_check(
-            request.query_params
-        )
-        if validation_error:
-            return response
-
-        filter_list = self.get_filter_list(request)
-        queryset = self.queryset.filter(*filter_list)
-        serializer = self.get_serializer(queryset, many=True)
-
-        # Return data or change first letters
-        if queryset:
-            return Response(serializer.data)
-        else:
-            return self.response_when_no_object_found(request)
-
-    @action(
-        detail=False,
-        url_path=r"production_date/(?P<sort_order>[ascending descending]+)",
-    )
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                "sort_order",
-                in_=openapi.IN_PATH,
-                description="Select cars' production date order: ascending or descending",
-                type=openapi.TYPE_STRING,
-            )
-        ]
-    )
-    def cars_in_production_date_order(
-        self, request: request_type, sort_order: str
-    ) -> response_type:
-        if sort_order == "ascending":
-            query_set = self.queryset.all().order_by("production_date")
-        elif sort_order == "descending":
-            query_set = self.queryset.all().order_by("-production_date")
-        else:
-            return Response({"Wrong url."})
-
-        serializer = self.get_serializer(query_set, many=True)
-        return Response(serializer.data)
-
-    @action(
-        detail=False, url_path=r"alphabetical/(?P<alphabetical_base>[brand model]+)"
-    )
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                "alphabetical_base",
-                in_=openapi.IN_PATH,
-                description="Select base of alphabetical order: brand or model",
-                type=openapi.TYPE_STRING,
-            )
-        ]
-    )
-    def objects_in_alphabetical_order(
-        self, request: request_type, alphabetical_base: str
-    ) -> response_type:
-        query_set = self.queryset.all().order_by(alphabetical_base)
-        serializer = self.get_serializer(query_set, many=True)
-        return Response(serializer.data)
+    @swagger_auto_schema(**get_swagger_parameters())
+    def list(self, request: request_type, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
