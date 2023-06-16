@@ -8,6 +8,6 @@ COPY . /Car_owners/
 
 WORKDIR /Car_owners
 
-RUN python -m venv /opt/venv
-RUN pip install pip --upgrade
-RUN pip install -r requirements.txt
+RUN python -m venv /opt/venv \
+    && pip install pip --upgrade \
+    && pip install -r requirements.txt

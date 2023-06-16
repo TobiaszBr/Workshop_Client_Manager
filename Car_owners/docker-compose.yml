@@ -36,7 +36,3 @@ services:
         && python manage.py migrate 
         && python manage.py runserver 0.0.0.0:8000
       "
-
-
-# zrobić env_file:
-# - /Car_owners/.env i usuń z .dockerignore
