@@ -12,12 +12,12 @@ and paste it at `dev_settings.py` (or `prod_settings.py`) instead of
 
 
 ### Django localhost and database with data
-- create a virtual environment based on requirements.txt file.
-You can run `pip install -r requirements.txt` command at terminal
+- Create and activate a virtual environment based on requirements.txt file.
+Go to Car_owners directory and run `pip install -r requirements.txt` command at terminal
 - Copy the following DB_PASSWORD : `"uzRRPett4YE67WC6Bn9C"`
 and paste it at `dev_settings.py` (or `prod_settings.py`) instead of 
-`config("DB_PASSWORD"),`
-- At terminal go to Car_owners directory and run `python manage.py runserver`
+`config("DB_PASSWORD")`
+- Finally, at terminal run `python manage.py runserver`
 
 
 ### Docker and empty database
