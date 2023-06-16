@@ -3,11 +3,11 @@
 ## How to run locally
 - Copy the following SECRET_KEY : 
 `"django-insecure-=ok6&fsow=(^4(&&$k=45eda5%d37*!s6xf78jx9wz&&g#6h6-"` 
-and paste it at `prod_settings.py` (or `dev_settings.py`) instead of 
+and paste it at `dev_settings.py` (or `prod_settings.py`) instead of 
 `config("SECRET_KEY")`
-- If you want to use development settings, go to `manage.py` file and change 
-`prod_settings` to `dev_settings` at
-`os.environ.setdefault("DJANGO_SETTINGS_MODULE", "car_owners.prod_settings")`
+- If you want to use production settings, go to `manage.py` file and change 
+`dev_settings` to `prod_settings` at
+`os.environ.setdefault("DJANGO_SETTINGS_MODULE", "car_owners.dev_settings")`
 - Choose if you want new empty database or one with some data to tests
 
 
@@ -15,14 +15,14 @@ and paste it at `prod_settings.py` (or `dev_settings.py`) instead of
 - create a virtual environment based on requirements.txt file.
 You can run `pip install -r requirements.txt` command at terminal
 - Copy the following DB_PASSWORD : `"uzRRPett4YE67WC6Bn9C"`
-and paste it at `prod_settings.py` (or `dev_settings.py`) instead of 
+and paste it at `dev_settings.py` (or `prod_settings.py`) instead of 
 `config("DB_PASSWORD"),`
 - At terminal go to Car_owners directory and run `python manage.py runserver`
 
 
 ### Docker and empty database
 - To use that way, there is a need to have Docker installed
-- Change `DATABASE_WITH_DATA` variable at `prod_settings.py` (or `dev_settings.py`)
+- Change `DATABASE_WITH_DATA` variable at `dev_settings.py` (or `prod_settings.py`)
 to `False`
 - At terminal run `docker-compose up -d`
 
