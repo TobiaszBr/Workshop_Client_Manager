@@ -16,8 +16,7 @@ services:
       retries: 10
 
   django:
-    #build: .
-    image: car_owners-django
+    build: .
     volumes:
       - .:/Car_owners
     ports:
