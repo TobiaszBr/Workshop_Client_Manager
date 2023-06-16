@@ -5,6 +5,7 @@ Car_owners/car_owners/__pycache__/
 
 # Django stuff:
 *.log
+Car_owners/data
 
 # Environment
 venv/
