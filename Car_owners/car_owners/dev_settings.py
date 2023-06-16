@@ -1,12 +1,16 @@
 from decouple import config
-from pathlib import Path
 import os
+from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
+
+# Allows to choose which database use. False - empty postgresql container database
+DATABASE_WITH_DATA = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -61,17 +65,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "car_owners.wsgi.application"
 
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_NAME"),
-        "USER": os.environ.get("POSTGRES_USER"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-        "HOST": "db",
-        "PORT": "5432",
+if DATABASE_WITH_DATA:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "railway",
+            "USER": "postgres",
+            "PASSWORD": config("DB_PASSWORD"),
+            "HOST": "containers-us-west-50.railway.app",
+            "PORT": "6557",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_NAME"),
+            "USER": os.environ.get("POSTGRES_USER"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+            "HOST": "db",
+            "PORT": "5432",
+        }
+    }
+
 
 
 # Password validation
