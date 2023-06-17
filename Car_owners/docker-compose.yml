@@ -17,7 +17,6 @@ services:
       timeout: 5s
       retries: 15
 
-
   django:
     build:
       context: .
