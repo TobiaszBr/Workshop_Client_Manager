@@ -13,3 +13,6 @@ Car_owners/.env
 
 # PyCharm
 .idea
+
+# Test coverage
+Car_owners/.coverage

@@ -6,8 +6,8 @@ from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from re import search
+from rest_framework import viewsets, status
 from rest_framework.request import Request
-from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from .decortors import swagger_decorator_owner, swagger_decorator_car
@@ -95,19 +95,27 @@ class OwnerViewSet(BaseViewSet):
             if key == "phone":
                 if search("[^0-9]", value):
                     return Response(
-                        {"phone": "Phone number can contain only digits"}
+                        {"phone": "Phone number can contain only digits"},
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
                 elif len(value) > 9:
-                    return Response({"phone": "Phone number is too long"})
+                    return Response(
+                        {"phone": "Phone number is too long"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 elif len(value) < 9:
-                    return Response({"phone": "Phone number is too short"})
+                    return Response(
+                        {"phone": "Phone number is too short"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             elif key == "name" or key == "surname":
                 if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", value):
                     return Response(
                         {
                             f"{key}": f"{key} can contain only letters and '-' without "
                             f"whitespaces"
-                        }
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
             elif key == "ordering":
                 if value not in self.ordering_fields:
@@ -116,7 +124,8 @@ class OwnerViewSet(BaseViewSet):
                         {
                             "ordering": f"Ordering should be one of the following: "
                             f"{ord_fields_string}"
-                        }
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
 
     @staticmethod
@@ -179,7 +188,8 @@ class CarViewSet(BaseViewSet):
                         {
                             "production_date": "Production date cannot be from the "
                             "future."
-                        }
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
             elif key == "ordering":
                 if value not in self.ordering_fields:
@@ -188,7 +198,8 @@ class CarViewSet(BaseViewSet):
                         {
                             "ordering": f"Ordering should be one of the following: "
                             f"{ord_fields_string}"
-                        }
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
 
     @staticmethod

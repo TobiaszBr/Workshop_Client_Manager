@@ -1,0 +1,6 @@
+[run]
+source= ./application, ./car_owners,
+omit=
+    */migrations/*
+    */tests/*
+    */__init__.py
