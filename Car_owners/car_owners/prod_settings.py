@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "application",
     "rest_framework",
     "drf_yasg",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
@@ -60,10 +61,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "car_owners.wsgi.application"
-
-
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 
 DATABASES = {
@@ -121,3 +118,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+# Override production variables if DJANGO_DEVELOPMENT env variable is True
+if os.getenv('DJANGO_DEVELOPMENT') == 'true':
+    from car_owners.dev_settings import *
