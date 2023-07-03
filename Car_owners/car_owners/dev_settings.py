@@ -1,6 +1,6 @@
 from decouple import config
 
-DEBUG = True
+DEBUG = False
 
 DATABASES = {
     "default": {

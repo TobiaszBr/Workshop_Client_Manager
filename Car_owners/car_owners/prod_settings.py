@@ -119,6 +119,9 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
 
+# Manage static files while DEBUG=False
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
 # Override production variables if DJANGO_DEVELOPMENT env variable is True
-if os.getenv('DJANGO_DEVELOPMENT') == 'true':
+if os.getenv("DJANGO_DEVELOPMENT") == "true":
     from car_owners.dev_settings import *
