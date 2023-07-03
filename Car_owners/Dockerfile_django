@@ -2,6 +2,5 @@ FROM python:3.10.8-slim
 ENV PYTHONUNBUFFERED=1
 COPY . /Car_owners/
 WORKDIR /Car_owners
-RUN python -m venv /opt/venv \
-    && pip install pip --upgrade \
+RUN pip install pip --upgrade \
     && pip install -r requirements.txt
