@@ -119,6 +119,18 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
 
+# Manage static files while DEBUG=False
+#STATIC_URL = "/venv/Lib/site-packages/drf_yasg/"
+#STATIC_URL = "C:/Users/Switch/Desktop/learn/django/REST_API/venv/Lib/site-packages/drf_yasg/"
+#MEDIA_URL = "/media/"
+BASE_DIR_LIST = os.path.split(BASE_DIR)
+BASE_DIR = BASE_DIR_LIST[0]
+STATIC_ROOT = os.path.join(BASE_DIR, "/venv/Lib/site-packages/drf_yasg/static")
+#MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
 # Override production variables if DJANGO_DEVELOPMENT env variable is True
-if os.getenv('DJANGO_DEVELOPMENT') == 'true':
+if os.getenv("DJANGO_DEVELOPMENT") == "true":
     from car_owners.dev_settings import *
+
+# pomysł jest taki, żeby do kontenera do katalogu głównego lub tam gdzie są setingsy skopiwać cały folder static i tyle,
+# nei trzeba bd podawać takiej ścieżki do venv i moze nie bd błędu?
