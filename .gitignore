@@ -9,7 +9,6 @@ Car_owners/data
 
 # Environment
 venv/
-Car_owners/.env
 
 # PyCharm
 .idea

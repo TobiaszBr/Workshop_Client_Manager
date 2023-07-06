@@ -1,4 +1,3 @@
-from decouple import config
 import os
 from pathlib import Path
 
@@ -7,7 +6,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY")       #"django-insecure-=ok6&fsow=(^4(&&$k=45eda5%d37*!s6xf78jx9wz&&g#6h6-" #config("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -66,9 +65,9 @@ WSGI_APPLICATION = "car_owners.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_NAME", "postgres"),
-        "USER": os.environ.get("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
+        "NAME": os.getenv("POSTGRES_NAME", "postgres"),
+        "USER": os.getenv("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
         "HOST": "db",
         "PORT": "5432",
     }
@@ -123,7 +122,7 @@ SECURE_SSL_REDIRECT = False
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Override production variables if DJANGO_DEVELOPMENT env variable is True
-if os.getenv("DJANGO_DEVELOPMENT") == "true":
+if os.getenv("DJANGO_DEVELOPMENT", "False") == "True":
     from car_owners.dev_settings import *
 
 
