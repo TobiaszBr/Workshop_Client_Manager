@@ -1,0 +1,6 @@
+FROM python:3.10.8-slim
+ENV PYTHONUNBUFFERED=1
+COPY . /Car_owners/
+WORKDIR /Car_owners
+RUN pip install pip --upgrade \
+    && pip install -r requirements.txt

@@ -16,19 +16,19 @@ class OwnerSerializer(serializers.ModelSerializer):
         """
 
         error_text = "Field can contain only letters and '-' without whitespaces."
-        if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", data["name"]):
+        if search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", data.get("name", "a")):
             raise serializers.ValidationError({"name": error_text})
-        elif search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", data["surname"]):
+        elif search("[^A-Z-a-zżźćńółęąśŻŹĆĄŚĘŁÓŃ]", data.get("surname", "a")):
             raise serializers.ValidationError({"surname": error_text})
-        elif search("[^0-9]", data["phone"]):
+        elif search("[^0-9]", data.get("phone", "700700700")):
             raise serializers.ValidationError(
                 {"phone": "Phone number can contain only digits"}
             )
-        elif len(data["phone"]) < 9:
+        elif len(data.get("phone", "700700700")) < 9:
             raise serializers.ValidationError(
                 {"phone": "The phone number is too short - 9 digits required"}
             )
-        elif len(data["phone"]) > 9:
+        elif len(data.get("phone", "700700700")) > 9:
             raise serializers.ValidationError(
                 {"phone": "The phone number is too long - 9 digits required"}
             )
@@ -44,7 +44,7 @@ class CarSerializer(serializers.ModelSerializer):
         """
         Checks that production date is not from the future.
         """
-        if data["production_date"] > datetime.date.today():
+        if data.get("production_date", "2000-01-01") > datetime.date.today():
             raise serializers.ValidationError(
                 {"production_date": "Production date cannot be from the future."}
             )
