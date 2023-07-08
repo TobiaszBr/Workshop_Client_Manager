@@ -6,6 +6,8 @@ Car_owners/car_owners/__pycache__/
 # Django stuff:
 *.log
 Car_owners/data
+Car_owners/db.sqlite3
+Car_owners/dump.json
 
 # Environment
 venv/
