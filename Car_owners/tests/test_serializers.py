@@ -5,7 +5,7 @@ from application.models import Owner, Car
 from application.serializers import OwnerSerializer, CarSerializer
 
 
-def get_owner_data(n=0):
+def get_owner_data(n: int = 0) -> dict[str, str]:
     name = "Adam"
     surname = "Knafel"
     phone = "123456789"
@@ -25,7 +25,7 @@ def get_owner_data(n=0):
 
 
 @pytest.fixture
-def car_data():
+def car_data() -> dict[str, str | datetime.date | Owner]:
     owner = Owner.objects.create(name="Adam", surname="Knafel", phone="123456789")
     return {
         "brand": "Ford",
@@ -37,7 +37,9 @@ def car_data():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("owner_serializer_data", [get_owner_data()])
-def test_owner_serializer_validate_function_no_error(owner_serializer_data):
+def test_owner_serializer_validate_function_no_error(
+    owner_serializer_data: dict[str, str]
+) -> None:
     owner_serializer = OwnerSerializer(data=owner_serializer_data)
     assert owner_serializer.validate(owner_serializer_data) == owner_serializer_data
 
@@ -60,21 +62,25 @@ def test_owner_serializer_validate_function_no_error(owner_serializer_data):
     ],
 )
 def test_owner_serializer_validate_function_error_with_message(
-    owner_serializer_data, error_message
-):
+    owner_serializer_data: dict[str, str], error_message: str
+) -> None:
     with pytest.raises(serializers.ValidationError, match=error_message):
         owner_serializer = OwnerSerializer(data=owner_serializer_data)
         owner_serializer.validate(owner_serializer_data)
 
 
 @pytest.mark.django_db
-def test_car_serializer_validate_function_no_error(car_data):
+def test_car_serializer_validate_function_no_error(
+    car_data: dict[str, str | datetime.date | Owner]
+) -> None:
     car_serializer = CarSerializer(data=car_data)
     assert car_serializer.validate(car_data) == car_data
 
 
 @pytest.mark.django_db
-def test_car_serializer_validate_function_error_with_message(car_data):
+def test_car_serializer_validate_function_error_with_message(
+    car_data: dict[str, str | datetime.date | Owner]
+) -> None:
     with pytest.raises(
         serializers.ValidationError, match="Production date cannot be from the future."
     ):

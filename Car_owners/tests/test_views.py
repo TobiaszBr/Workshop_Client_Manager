@@ -11,13 +11,13 @@ def api_client() -> APIClient:
 
 
 @pytest.fixture
-def owner_data():
+def owner_data() -> dict[str, str]:
     owner_data = {"name": "Andrzej", "surname": "Starczyk", "phone": "575849675"}
     return owner_data
 
 
 @pytest.fixture
-def car_data(api_client, owner_data):
+def car_data(api_client: APIClient, owner_data: dict[str, str]) -> dict[str, str | int]:
     response_create_owner = api_client.post(
         "/app/owners/", data=owner_data, format="json"
     )
@@ -33,7 +33,9 @@ def car_data(api_client, owner_data):
 
 
 @pytest.mark.django_db
-def test_create_and_get_owner(api_client, owner_data):
+def test_create_and_get_owner(
+    api_client: APIClient, owner_data: dict[str, str]
+) -> None:
     # create owner
     response_create_owner = api_client.post(
         "/app/owners/", data=owner_data, format="json"
@@ -56,7 +58,7 @@ def test_create_and_get_owner(api_client, owner_data):
 
 
 @pytest.mark.django_db
-def test_patch_owner(api_client, owner_data):
+def test_patch_owner(api_client: APIClient, owner_data: dict[str, str]) -> None:
     # create owner
     response_create_owner = api_client.post(
         "/app/owners/", data=owner_data, format="json"
@@ -86,7 +88,7 @@ def test_patch_owner(api_client, owner_data):
 
 
 @pytest.mark.django_db
-def test_delete_owner(api_client, owner_data):
+def test_delete_owner(api_client: APIClient, owner_data: dict[str, str]) -> None:
     # create owner
     response_create_owner = api_client.post(
         "/app/owners/", data=owner_data, format="json"
@@ -116,7 +118,9 @@ def test_delete_owner(api_client, owner_data):
 
 
 @pytest.mark.django_db
-def test_create_and_get_car(api_client, car_data):
+def test_create_and_get_car(
+    api_client: APIClient, car_data: dict[str, str | int]
+) -> None:
     # create car
     response_create_car = api_client.post("/app/cars/", data=car_data, format="json")
     car_id = response_create_car.data["id"]
@@ -132,7 +136,7 @@ def test_create_and_get_car(api_client, car_data):
 
 
 @pytest.mark.django_db
-def test_patch_car(api_client, car_data):
+def test_patch_car(api_client: APIClient, car_data: dict[str, str | int]) -> None:
     # create car
     response_create_car = api_client.post("/app/cars/", data=car_data, format="json")
     car_id = response_create_car.data["id"]
@@ -157,7 +161,7 @@ def test_patch_car(api_client, car_data):
 
 
 @pytest.mark.django_db
-def test_delete_car(api_client, car_data):
+def test_delete_car(api_client: APIClient, car_data: dict[str, str | int]) -> None:
     # create car
     response_create_car = api_client.post("/app/cars/", data=car_data, format="json")
     car_id = response_create_car.data["id"]
@@ -197,7 +201,9 @@ def test_delete_car(api_client, car_data):
     ],
 )
 @pytest.mark.django_db
-def test_owner_request_validation(api_client, data, expected_message):
+def test_owner_request_validation(
+    api_client: APIClient, data: dict[str, str], expected_message: str
+) -> None:
     ((key, value),) = data.items()
     if key == "ordering":
         owner_view = OwnerViewSet()
@@ -226,7 +232,9 @@ def test_owner_request_validation(api_client, data, expected_message):
     ],
 )
 @pytest.mark.django_db
-def test_response_no_object_found(api_client, model_data, model_str):
+def test_response_no_object_found(
+    api_client: APIClient, model_data: dict[str, str], model_str: str
+) -> None:
     response_get_model = api_client.get(
         f"/app/{model_str}s/", data=model_data, format="json"
     )
@@ -245,7 +253,9 @@ def test_response_no_object_found(api_client, model_data, model_str):
     ],
 )
 @pytest.mark.django_db
-def test_car_request_validation(api_client, data, expected_message):
+def test_car_request_validation(
+    api_client: APIClient, data: dict[str, datetime.date | str], expected_message: str
+) -> None:
     ((key, value),) = data.items()
     if key == "ordering":
         car_view = CarViewSet()

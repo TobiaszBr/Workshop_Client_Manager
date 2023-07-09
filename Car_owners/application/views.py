@@ -129,7 +129,7 @@ class OwnerViewSet(BaseViewSet):
                     )
 
     @staticmethod
-    def get_swagger_parameters():
+    def get_swagger_parameters() -> dict[str, list[openapi.Parameter]]:
         swagger_parameters_dict = {
             "id": "Owner's unique id number",
             "name": "Owner's name",
@@ -157,7 +157,7 @@ class OwnerViewSet(BaseViewSet):
         return swagger_auto_schema_params_dict
 
     @swagger_auto_schema(**get_swagger_parameters())
-    def list(self, request: request_type, *args, **kwargs):
+    def list(self, request: request_type, *args, **kwargs) -> response_type:
         return super().list(request, *args, **kwargs)
 
 
@@ -203,7 +203,7 @@ class CarViewSet(BaseViewSet):
                     )
 
     @staticmethod
-    def get_swagger_parameters():
+    def get_swagger_parameters() -> dict[str, list[openapi.Parameter]]:
         swagger_parameters_dict = {
             "id": "Car's unique id number",
             "brand": "Car's brand",
@@ -232,5 +232,5 @@ class CarViewSet(BaseViewSet):
         return swagger_auto_schema_params_dict
 
     @swagger_auto_schema(**get_swagger_parameters())
-    def list(self, request: request_type, *args, **kwargs):
+    def list(self, request: request_type, *args, **kwargs) -> response_type:
         return super().list(request, *args, **kwargs)
