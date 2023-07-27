@@ -6,20 +6,9 @@ from application.views import OwnerViewSet, CarViewSet
 
 
 @pytest.fixture
-def api_client() -> APIClient:
-    yield APIClient()
-
-
-@pytest.fixture
-def owner_data() -> dict[str, str]:
-    owner_data = {"name": "Andrzej", "surname": "Starczyk", "phone": "575849675"}
-    return owner_data
-
-
-@pytest.fixture
-def car_data(api_client: APIClient, owner_data: dict[str, str]) -> dict[str, str | int]:
+def car_data(api_client: APIClient, valid_owner_data: dict[str, str]) -> dict[str, str | int]:
     response_create_owner = api_client.post(
-        "/app/owners/", data=owner_data, format="json"
+        "/app/owners/", data=valid_owner_data, format="json"
     )
     owner_id = response_create_owner.data["id"]
     car_data = {
@@ -34,18 +23,18 @@ def car_data(api_client: APIClient, owner_data: dict[str, str]) -> dict[str, str
 
 @pytest.mark.django_db
 def test_create_and_get_owner(
-    api_client: APIClient, owner_data: dict[str, str]
+    api_client: APIClient, valid_owner_data: dict[str, str]
 ) -> None:
     # create owner
     response_create_owner = api_client.post(
-        "/app/owners/", data=owner_data, format="json"
+        "/app/owners/", data=valid_owner_data, format="json"
     )
     owner_id = response_create_owner.data["id"]
     assert response_create_owner.status_code == status.HTTP_201_CREATED
     assert all(
         [
-            response_create_owner.data[key] == owner_data[key]
-            for key in owner_data.keys()
+            response_create_owner.data[key] == valid_owner_data[key]
+            for key in valid_owner_data.keys()
         ]
     )
 
@@ -53,52 +42,52 @@ def test_create_and_get_owner(
     response_get_owner = api_client.get(f"/app/owners/{owner_id}/", format="json")
     assert response_get_owner.status_code == status.HTTP_200_OK
     assert all(
-        [response_get_owner.data[key] == owner_data[key] for key in owner_data.keys()]
+        [response_get_owner.data[key] == valid_owner_data[key] for key in valid_owner_data.keys()]
     )
 
 
 @pytest.mark.django_db
-def test_patch_owner(api_client: APIClient, owner_data: dict[str, str]) -> None:
+def test_patch_owner(api_client: APIClient, valid_owner_data: dict[str, str]) -> None:
     # create owner
     response_create_owner = api_client.post(
-        "/app/owners/", data=owner_data, format="json"
+        "/app/owners/", data=valid_owner_data, format="json"
     )
     owner_id = response_create_owner.data["id"]
     assert response_create_owner.status_code == status.HTTP_201_CREATED
     assert all(
         [
-            response_create_owner.data[key] == owner_data[key]
-            for key in owner_data.keys()
+            response_create_owner.data[key] == valid_owner_data[key]
+            for key in valid_owner_data.keys()
         ]
     )
 
     # update owner
-    owner_data["name"] = "Krzysztof"
+    valid_owner_data["name"] = "Krzysztof"
     response_patch_owner = api_client.patch(
-        f"/app/owners/{owner_id}/", data=owner_data, format="json"
+        f"/app/owners/{owner_id}/", data=valid_owner_data, format="json"
     )
     assert response_patch_owner.status_code == status.HTTP_200_OK
-    assert response_patch_owner.data["name"] == owner_data["name"]
+    assert response_patch_owner.data["name"] == valid_owner_data["name"]
 
     # owner does not exist
     response_patch_owner = api_client.patch(
-        f"/app/owners/{owner_id + 1}/", data=owner_data, format="json"
+        f"/app/owners/{owner_id + 1}/", data=valid_owner_data, format="json"
     )
     assert response_patch_owner.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db
-def test_delete_owner(api_client: APIClient, owner_data: dict[str, str]) -> None:
+def test_delete_owner(api_client: APIClient, valid_owner_data: dict[str, str]) -> None:
     # create owner
     response_create_owner = api_client.post(
-        "/app/owners/", data=owner_data, format="json"
+        "/app/owners/", data=valid_owner_data, format="json"
     )
     owner_id = response_create_owner.data["id"]
     assert response_create_owner.status_code == status.HTTP_201_CREATED
     assert all(
         [
-            response_create_owner.data[key] == owner_data[key]
-            for key in owner_data.keys()
+            response_create_owner.data[key] == valid_owner_data[key]
+            for key in valid_owner_data.keys()
         ]
     )
 
@@ -115,6 +104,15 @@ def test_delete_owner(api_client: APIClient, owner_data: dict[str, str]) -> None
         f"/app/owners/{owner_id + 1}/", format="json"
     )
     assert response_delete_owner.status_code == status.HTTP_404_NOT_FOUND
+
+
+
+
+
+# CAR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 
 
 @pytest.mark.django_db

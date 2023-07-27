@@ -60,19 +60,23 @@ def test_owner_serializer_validate_function_error_with_message(
 
 @pytest.mark.django_db
 def test_car_serializer_validate_function_valid_data(
-    car_data: dict[str, str | datetime.date | Owner]
+    valid_car_serializer_data: dict[str, str | datetime.date | Owner]
 ) -> None:
-    car_serializer = CarSerializer(data=car_data)
-    assert car_serializer.validate(car_data) == car_data
+    car_serializer = CarSerializer(data=valid_car_serializer_data)
+    assert (
+        car_serializer.validate(valid_car_serializer_data) == valid_car_serializer_data
+    )
 
 
 @pytest.mark.django_db
 def test_car_serializer_validate_function_error_with_message(
-    car_data: dict[str, str | datetime.date | Owner]
+    valid_car_serializer_data: dict[str, str | datetime.date | Owner]
 ) -> None:
     with pytest.raises(
         serializers.ValidationError, match="Production date cannot be from the future."
     ):
-        car_data["production_date"] = datetime.date.today() + datetime.timedelta(days=1)
-        car_serializer = CarSerializer(data=car_data)
-        car_serializer.validate(car_data)
+        valid_car_serializer_data[
+            "production_date"
+        ] = datetime.date.today() + datetime.timedelta(days=1)
+        car_serializer = CarSerializer(data=valid_car_serializer_data)
+        car_serializer.validate(valid_car_serializer_data)
