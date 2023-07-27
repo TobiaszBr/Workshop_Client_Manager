@@ -9,6 +9,11 @@ def valid_owner_data() -> Owner:
     owner_data = {"name": "Andrzej", "surname": "Starczyk", "phone": "123456789"}
     return owner_data
 
+@pytest.fixture
+def valid_new_owner_data() -> Owner:
+    owner_data = {"name": "Tadeusz", "surname": "Madej", "phone": "789456789"}
+    return owner_data
+
 
 @pytest.fixture
 def valid_owner_model_data(valid_owner_data: dict) -> Owner:
