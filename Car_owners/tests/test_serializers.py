@@ -24,20 +24,9 @@ def get_owner_data(n: int = 0) -> dict[str, str]:
     return {"name": name, "surname": surname, "phone": phone}
 
 
-@pytest.fixture
-def car_data() -> dict[str, str | datetime.date | Owner]:
-    owner = Owner.objects.create(name="Adam", surname="Knafel", phone="123456789")
-    return {
-        "brand": "Ford",
-        "model": "Focus",
-        "production_date": datetime.date.today(),
-        "owner": owner,
-    }
-
-
 @pytest.mark.django_db
 @pytest.mark.parametrize("owner_serializer_data", [get_owner_data()])
-def test_owner_serializer_validate_function_no_error(
+def test_owner_serializer_validate_function_valid_data(
     owner_serializer_data: dict[str, str]
 ) -> None:
     owner_serializer = OwnerSerializer(data=owner_serializer_data)
@@ -70,7 +59,7 @@ def test_owner_serializer_validate_function_error_with_message(
 
 
 @pytest.mark.django_db
-def test_car_serializer_validate_function_no_error(
+def test_car_serializer_validate_function_valid_data(
     car_data: dict[str, str | datetime.date | Owner]
 ) -> None:
     car_serializer = CarSerializer(data=car_data)
