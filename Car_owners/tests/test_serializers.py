@@ -5,27 +5,11 @@ from application.models import Owner, Car
 from application.serializers import OwnerSerializer, CarSerializer
 
 
-def get_owner_data(n: int = 0) -> dict[str, str]:
-    name = "Adam"
-    surname = "Knafel"
-    phone = "123456789"
-
-    if n == 1:
-        name = "123"
-    elif n == 2:
-        surname = "123"
-    elif n == 3:
-        phone = "abc"
-    elif n == 4:
-        phone = "1234"
-    elif n == 5:
-        phone = "123456789123"
-
-    return {"name": name, "surname": surname, "phone": phone}
-
-
 @pytest.mark.django_db
-@pytest.mark.parametrize("owner_serializer_data", [get_owner_data()])
+@pytest.mark.parametrize(
+    "owner_serializer_data",
+    [{"name": "Adam", "surname": "Knafel", "phone": "123456789"}],
+)
 def test_owner_serializer_validate_function_valid_data(
     owner_serializer_data: dict[str, str]
 ) -> None:
@@ -38,16 +22,25 @@ def test_owner_serializer_validate_function_valid_data(
     ("owner_serializer_data", "error_message"),
     [
         (
-            get_owner_data(1),
+            {"name": "123", "surname": "Knafel", "phone": "123456789"},
             "Field can contain only letters and '-' without whitespaces.",
         ),
         (
-            get_owner_data(2),
+            {"name": "Adam", "surname": "123", "phone": "123456789"},
             "Field can contain only letters and '-' without whitespaces.",
         ),
-        (get_owner_data(3), "Phone number can contain only digits"),
-        (get_owner_data(4), "The phone number is too short - 9 digits required"),
-        (get_owner_data(5), "The phone number is too long - 9 digits required"),
+        (
+            {"name": "Adam", "surname": "Knafel", "phone": "abc"},
+            "Phone number can contain only digits",
+        ),
+        (
+            {"name": "Adam", "surname": "Knafel", "phone": "1234"},
+            "The phone number is too short - 9 digits required",
+        ),
+        (
+            {"name": "Adam", "surname": "Knafel", "phone": "123456789123"},
+            "The phone number is too long - 9 digits required",
+        ),
     ],
 )
 def test_owner_serializer_validate_function_error_with_message(
