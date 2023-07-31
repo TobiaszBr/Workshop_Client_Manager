@@ -6,145 +6,137 @@ from application.models import Owner, Car
 from application.views import OwnerViewSet, CarViewSet
 
 
-@pytest.mark.django_db
-def test_create_owner(
-    api_client: APIClient, valid_owner_data: dict[str, str]
-) -> None:
-    # create owner
-    response_create_owner = api_client.post(
-        "/app/owners/", data=valid_owner_data, format="json"
-    )
-    assert response_create_owner.status_code == status.HTTP_201_CREATED
-    assert all(
-        [
-            response_create_owner.data[key] == valid_owner_data[key]
-            for key in valid_owner_data.keys()
-        ]
-    )
+class TestsOwnerViews():
+    @pytest.mark.django_db
+    def test_create_owner(self, api_client: APIClient, valid_owner_data: dict[str, str]
+    ) -> None:
+        # create owner
+        response_create_owner = api_client.post(
+            "/app/owners/", data=valid_owner_data, format="json"
+        )
+        assert response_create_owner.status_code == status.HTTP_201_CREATED
+        assert all(
+            [
+                response_create_owner.data[key] == valid_owner_data[key]
+                for key in valid_owner_data.keys()
+            ]
+        )
+
+    @pytest.mark.django_db
+    def test_get_owner(self, api_client: APIClient, valid_owner_model_data: Owner
+    ) -> None:
+        owner_id = valid_owner_model_data.id
+        # get owner
+        response_get_owner = api_client.get(f"/app/owners/{owner_id}/", format="json")
+        valid_owner_model_data_dict = vars(valid_owner_model_data)
+        del valid_owner_model_data_dict["_state"]
+        assert response_get_owner.status_code == status.HTTP_200_OK
+        assert all(
+            [response_get_owner.data[key] == valid_owner_model_data_dict[key] for key in
+             valid_owner_model_data_dict.keys()]
+        )
+
+    @pytest.mark.django_db
+    def test_patch_owner(self, api_client: APIClient, valid_owner_model_data: Owner,
+            valid_new_owner_data: dict[str, str]) -> None:
+        # update owner
+        owner_id = valid_owner_model_data.id
+        response_patch_owner = api_client.patch(
+            f"/app/owners/{owner_id}/", data=valid_new_owner_data, format="json"
+        )
+        assert response_patch_owner.status_code == status.HTTP_200_OK
+        assert all(
+            [response_patch_owner.data[key] == valid_new_owner_data[key] for key in
+             valid_new_owner_data.keys()]
+        )
+
+        # owner does not exist
+        response_patch_owner = api_client.patch(
+            f"/app/owners/{owner_id + 1}/", data=valid_new_owner_data, format="json"
+        )
+        assert response_patch_owner.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.django_db
+    def test_delete_owner(self, api_client: APIClient, valid_owner_model_data: Owner) -> None:
+        # delete owner
+        owner_id = valid_owner_model_data.id
+        response_delete_owner = api_client.delete(f"/app/owners/{owner_id}/",
+                                                  format="json")
+        assert response_delete_owner.status_code == status.HTTP_204_NO_CONTENT
+
+        # try to get that owner
+        response_get_owner = api_client.get(f"/app/owners/{owner_id}/", format="json")
+        assert response_get_owner.status_code == status.HTTP_404_NOT_FOUND
+
+        # Owner does not exist
+        response_delete_owner = api_client.delete(
+            f"/app/owners/{owner_id + 1}/", format="json"
+        )
+        assert response_delete_owner.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.django_db
-def test_get_owner(
-    api_client: APIClient, valid_owner_model_data: Owner
-) -> None:
-    owner_id = valid_owner_model_data.id
-    # get owner
-    response_get_owner = api_client.get(f"/app/owners/{owner_id}/", format="json")
-    valid_owner_model_data_dict = vars(valid_owner_model_data)
-    del valid_owner_model_data_dict["_state"]
-    assert response_get_owner.status_code == status.HTTP_200_OK
-    assert all(
-        [response_get_owner.data[key] == valid_owner_model_data_dict[key] for key in valid_owner_model_data_dict.keys()]
-    )
+class TestsCarViews():
+    @pytest.mark.django_db
+    def test_create_car(self, api_client: APIClient, valid_car_view_data: dict[str, str | int]
+    ) -> None:
+        # create car
+        response_create_car = api_client.post("/app/cars/", data=valid_car_view_data,
+                                              format="json")
+        assert response_create_car.status_code == status.HTTP_201_CREATED
+        assert all(
+            [response_create_car.data[key] == valid_car_view_data[key] for key in
+             valid_car_view_data.keys()]
+        )
 
+    @pytest.mark.django_db
+    def test_get_car(self, api_client: APIClient, valid_car_model_data: Car
+    ) -> None:
+        # get car
+        car_id = valid_car_model_data.id
+        response_get_car = api_client.get(f"/app/cars/{car_id}/", format="json")
 
-@pytest.mark.django_db
-def test_patch_owner(
-        api_client: APIClient, valid_owner_model_data: Owner,
-        valid_new_owner_data: dict[str, str]) -> None:
-    # update owner
-    owner_id = valid_owner_model_data.id
-    response_patch_owner = api_client.patch(
-        f"/app/owners/{owner_id}/", data=valid_new_owner_data, format="json"
-    )
-    assert response_patch_owner.status_code == status.HTTP_200_OK
-    assert all(
-        [response_patch_owner.data[key] == valid_new_owner_data[key] for key in valid_new_owner_data.keys()]
-    )
+        assert response_get_car.status_code == status.HTTP_200_OK
+        assert response_get_car.data["id"] == valid_car_model_data.id
+        assert response_get_car.data["brand"] == valid_car_model_data.brand
+        assert response_get_car.data["model"] == valid_car_model_data.model
+        assert response_get_car.data["production_date"] == str(
+            valid_car_model_data.production_date)
 
-    # owner does not exist
-    response_patch_owner = api_client.patch(
-        f"/app/owners/{owner_id + 1}/", data=valid_new_owner_data, format="json"
-    )
-    assert response_patch_owner.status_code == status.HTTP_404_NOT_FOUND
+    @pytest.mark.django_db
+    def test_patch_car(self, api_client: APIClient, valid_car_model_data: Car,
+                       valid_new_car_view_data: dict[str, str | int]) -> None:
+        # update car
+        car_id = valid_car_model_data.id
+        response_patch_car = api_client.patch(
+            f"/app/cars/{car_id}/", data=valid_new_car_view_data, format="json"
+        )
+        assert response_patch_car.status_code == status.HTTP_200_OK
+        assert all(
+            [response_patch_car.data[key] == valid_new_car_view_data[key] for key in
+             valid_new_car_view_data.keys()]
+        )
 
+        # car does not exist
+        response_patch_car = api_client.patch(
+            f"/app/cars/{car_id + 1}/", data=valid_new_car_view_data, format="json"
+        )
+        assert response_patch_car.status_code == status.HTTP_404_NOT_FOUND
 
-@pytest.mark.django_db
-def test_delete_owner(api_client: APIClient, valid_owner_model_data: Owner) -> None:
-    # delete owner
-    owner_id = valid_owner_model_data.id
-    response_delete_owner = api_client.delete(f"/app/owners/{owner_id}/", format="json")
-    assert response_delete_owner.status_code == status.HTTP_204_NO_CONTENT
+    @pytest.mark.django_db
+    def test_delete_car(self, api_client: APIClient, valid_car_model_data: Car) -> None:
+        # delete car
+        car_id = valid_car_model_data.id
+        response_delete_car = api_client.delete(f"/app/cars/{car_id}/", format="json")
+        assert response_delete_car.status_code == status.HTTP_204_NO_CONTENT
 
-    # try to get that owner
-    response_get_owner = api_client.get(f"/app/owners/{owner_id}/", format="json")
-    assert response_get_owner.status_code == status.HTTP_404_NOT_FOUND
+        # try to get that car
+        response_get_car = api_client.get(f"/app/cars/{car_id}/", format="json")
+        assert response_get_car.status_code == status.HTTP_404_NOT_FOUND
 
-    # Owner does not exist
-    response_delete_owner = api_client.delete(
-        f"/app/owners/{owner_id + 1}/", format="json"
-    )
-    assert response_delete_owner.status_code == status.HTTP_404_NOT_FOUND
-
-
-
-
-
-
-
-# CAR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-@pytest.mark.django_db
-def test_create_car(
-    api_client: APIClient, valid_car_view_data: dict[str, str | int]
-) -> None:
-    # create car
-    response_create_car = api_client.post("/app/cars/", data=valid_car_view_data, format="json")
-    assert response_create_car.status_code == status.HTTP_201_CREATED
-    assert all(
-        [response_create_car.data[key] == valid_car_view_data[key] for key in valid_car_view_data.keys()]
-    )
-
-@pytest.mark.django_db
-def test_get_car(
-    api_client: APIClient, valid_car_model_data: Car
-) -> None:
-    # get car
-    car_id = valid_car_model_data.id
-    response_get_car = api_client.get(f"/app/cars/{car_id}/", format="json")
-
-    assert response_get_car.status_code == status.HTTP_200_OK
-    assert response_get_car.data["id"] == valid_car_model_data.id
-    assert response_get_car.data["brand"] == valid_car_model_data.brand
-    assert response_get_car.data["model"] == valid_car_model_data.model
-    assert response_get_car.data["production_date"] == str(valid_car_model_data.production_date)
-
-@pytest.mark.django_db
-def test_patch_car(api_client: APIClient, valid_car_model_data: Car,
-        valid_new_car_view_data: dict[str, str | int]) -> None:
-    # update car
-    car_id = valid_car_model_data.id
-    response_patch_car = api_client.patch(
-        f"/app/cars/{car_id}/", data=valid_new_car_view_data, format="json"
-    )
-    assert response_patch_car.status_code == status.HTTP_200_OK
-    assert all(
-        [response_patch_car.data[key] == valid_new_car_view_data[key] for key in
-         valid_new_car_view_data.keys()]
-    )
-
-    # car does not exist
-    response_patch_car = api_client.patch(
-        f"/app/cars/{car_id + 1}/", data=valid_new_car_view_data, format="json"
-    )
-    assert response_patch_car.status_code == status.HTTP_404_NOT_FOUND
-
-@pytest.mark.django_db
-def test_delete_car(api_client: APIClient, valid_car_model_data: Car) -> None:
-    # delete car
-    car_id = valid_car_model_data.id
-    response_delete_car = api_client.delete(f"/app/cars/{car_id}/", format="json")
-    assert response_delete_car.status_code == status.HTTP_204_NO_CONTENT
-
-    # try to get that car
-    response_get_car = api_client.get(f"/app/cars/{car_id}/", format="json")
-    assert response_get_car.status_code == status.HTTP_404_NOT_FOUND
-
-    # Car does not exist
-    response_delete_car = api_client.delete(f"/app/cars/{car_id + 1}/", format="json")
-    assert response_delete_car.status_code == status.HTTP_404_NOT_FOUND
-
-
+        # Car does not exist
+        response_delete_car = api_client.delete(f"/app/cars/{car_id + 1}/",
+                                                format="json")
+        assert response_delete_car.status_code == status.HTTP_404_NOT_FOUND
 
 
 
