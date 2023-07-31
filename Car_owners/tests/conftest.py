@@ -34,9 +34,7 @@ def valid_car_serializer_data(
 
 
 @pytest.fixture
-def valid_car_model_data(
-    valid_owner_model_data: Owner,
-    valid_car_serializer_data: dict[str, str | datetime.date | Owner],
+def valid_car_model_data(valid_car_serializer_data: dict[str, str | datetime.date | Owner],
 ) -> Car:
     car = Car.objects.create(**valid_car_serializer_data)
     return car
@@ -54,6 +52,18 @@ def valid_car_view_data(valid_owner_model_data: Owner) -> dict[str, str | int]:
         "brand": "Ford",
         "model": "Mondeo",
         "production_date": "2023-01-01",
+        "owner": owner_id,
+    }
+
+    return car_data
+
+@pytest.fixture
+def valid_new_car_view_data(valid_owner_model_data: Owner) -> dict[str, str | int]:
+    owner_id = valid_owner_model_data.id
+    car_data = {
+        "brand": "Skoda",
+        "model": "Superb",
+        "production_date": "2023-05-20",
         "owner": owner_id,
     }
 
