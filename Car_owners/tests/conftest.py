@@ -9,6 +9,7 @@ def valid_owner_data() -> Owner:
     owner_data = {"name": "Andrzej", "surname": "Starczyk", "phone": "123456789"}
     return owner_data
 
+
 @pytest.fixture
 def valid_new_owner_data() -> Owner:
     owner_data = {"name": "Tadeusz", "surname": "Madej", "phone": "789456789"}
@@ -34,7 +35,8 @@ def valid_car_serializer_data(
 
 
 @pytest.fixture
-def valid_car_model_data(valid_car_serializer_data: dict[str, str | datetime.date | Owner],
+def valid_car_model_data(
+    valid_car_serializer_data: dict[str, str | datetime.date | Owner],
 ) -> Car:
     car = Car.objects.create(**valid_car_serializer_data)
     return car
@@ -56,6 +58,7 @@ def valid_car_view_data(valid_owner_model_data: Owner) -> dict[str, str | int]:
     }
 
     return car_data
+
 
 @pytest.fixture
 def valid_new_car_view_data(valid_owner_model_data: Owner) -> dict[str, str | int]:
