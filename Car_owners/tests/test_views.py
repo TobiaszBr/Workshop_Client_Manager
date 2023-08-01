@@ -33,6 +33,7 @@ class TestsOwnerViews:
         valid_owner_model_data_dict = vars(valid_owner_model_data)
         del valid_owner_model_data_dict["_state"]
         assert response_get_owner.status_code == status.HTTP_200_OK
+        assert response_get_owner.data["name"] == "Andrzej"
         assert all(
             [
                 response_get_owner.data[key] == valid_owner_model_data_dict[key]
