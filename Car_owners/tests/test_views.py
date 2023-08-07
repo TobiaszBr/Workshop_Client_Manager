@@ -3,6 +3,7 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 from application.models import Owner, Car
+from application.serializers import OwnerSerializer, CarSerializer
 from application.views import OwnerViewSet, CarViewSet
 
 
@@ -30,16 +31,9 @@ class TestsOwnerViews:
         owner_id = valid_owner_model_data.id
         # get owner
         response_get_owner = api_client.get(f"/app/owners/{owner_id}/", format="json")
-        valid_owner_model_data_dict = vars(valid_owner_model_data)
-        del valid_owner_model_data_dict["_state"]
+        serializer = OwnerSerializer(valid_owner_model_data)
         assert response_get_owner.status_code == status.HTTP_200_OK
-        assert response_get_owner.data["name"] == "Andrzej"
-        assert all(
-            [
-                response_get_owner.data[key] == valid_owner_model_data_dict[key]
-                for key in valid_owner_model_data_dict.keys()
-            ]
-        )
+        assert response_get_owner.data == serializer.data
 
     @pytest.mark.django_db
     def test_patch_owner(
@@ -144,14 +138,9 @@ class TestsCarViews:
         # get car
         car_id = valid_car_model_data.id
         response_get_car = api_client.get(f"/app/cars/{car_id}/", format="json")
+        serializer = CarSerializer(valid_car_model_data)
+        assert response_get_car.data == serializer.data
 
-        assert response_get_car.status_code == status.HTTP_200_OK
-        assert response_get_car.data["id"] == valid_car_model_data.id
-        assert response_get_car.data["brand"] == valid_car_model_data.brand
-        assert response_get_car.data["model"] == valid_car_model_data.model
-        assert response_get_car.data["production_date"] == str(
-            valid_car_model_data.production_date
-        )
 
     @pytest.mark.django_db
     def test_patch_car(
