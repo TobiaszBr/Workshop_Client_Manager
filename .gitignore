@@ -12,3 +12,6 @@ venv/
 
 # PyCharm
 .idea
+
+# Test coverage
+Car_owners/.coverage
