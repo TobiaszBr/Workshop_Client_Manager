@@ -55,12 +55,6 @@ class TestsOwnerViews:
             ]
         )
 
-        # owner does not exist
-        response_patch_owner = api_client.patch(
-            f"/app/owners/{owner_id + 1}/", data=valid_new_owner_data, format="json"
-        )
-        assert response_patch_owner.status_code == status.HTTP_404_NOT_FOUND
-
     @pytest.mark.django_db
     def test_delete_owner(
         self, api_client: APIClient, valid_owner_model_data: Owner
@@ -75,12 +69,6 @@ class TestsOwnerViews:
         # try to get that owner
         response_get_owner = api_client.get(f"/app/owners/{owner_id}/", format="json")
         assert response_get_owner.status_code == status.HTTP_404_NOT_FOUND
-
-        # Owner does not exist
-        response_delete_owner = api_client.delete(
-            f"/app/owners/{owner_id + 1}/", format="json"
-        )
-        assert response_delete_owner.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.parametrize(
         ("data", "expected_message"),
@@ -115,6 +103,24 @@ class TestsOwnerViews:
         )
         assert response_get_owner_invalid_data.data[key] == expected_message
 
+    @pytest.mark.django_db
+    def test_owner_not_exist(
+        self,
+        api_client: APIClient,
+        valid_owner_model_data: Owner,
+        valid_new_owner_data: dict[str, str],
+    ) -> None:
+        # owner does not exist
+        owner_id = valid_owner_model_data.id
+        response_patch_owner = api_client.patch(
+            f"/app/owners/{owner_id + 1}/", data=valid_new_owner_data, format="json"
+        )
+        response_delete_owner = api_client.delete(
+            f"/app/owners/{owner_id + 1}/", format="json"
+        )
+        assert response_patch_owner.status_code == status.HTTP_404_NOT_FOUND
+        assert response_delete_owner.status_code == status.HTTP_404_NOT_FOUND
+
 
 class TestsCarViews:
     @pytest.mark.django_db
@@ -141,7 +147,6 @@ class TestsCarViews:
         serializer = CarSerializer(valid_car_model_data)
         assert response_get_car.data == serializer.data
 
-
     @pytest.mark.django_db
     def test_patch_car(
         self,
@@ -162,12 +167,6 @@ class TestsCarViews:
             ]
         )
 
-        # car does not exist
-        response_patch_car = api_client.patch(
-            f"/app/cars/{car_id + 1}/", data=valid_new_car_view_data, format="json"
-        )
-        assert response_patch_car.status_code == status.HTTP_404_NOT_FOUND
-
     @pytest.mark.django_db
     def test_delete_car(self, api_client: APIClient, valid_car_model_data: Car) -> None:
         # delete car
@@ -178,12 +177,6 @@ class TestsCarViews:
         # try to get that car
         response_get_car = api_client.get(f"/app/cars/{car_id}/", format="json")
         assert response_get_car.status_code == status.HTTP_404_NOT_FOUND
-
-        # Car does not exist
-        response_delete_car = api_client.delete(
-            f"/app/cars/{car_id + 1}/", format="json"
-        )
-        assert response_delete_car.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.parametrize(
         ("data", "expected_message"),
@@ -211,6 +204,24 @@ class TestsCarViews:
         )
         assert response_get_car_invalid_data.status_code == status.HTTP_400_BAD_REQUEST
         assert response_get_car_invalid_data.data[key] == expected_message
+
+    @pytest.mark.django_db
+    def test_car_not_exist(
+        self,
+        api_client: APIClient,
+        valid_car_model_data: Car,
+        valid_new_car_view_data: dict[str, str | int],
+    ) -> None:
+        # car does not exist
+        car_id = valid_car_model_data.id
+        response_patch_car = api_client.patch(
+            f"/app/cars/{car_id + 1}/", data=valid_new_car_view_data, format="json"
+        )
+        response_delete_car = api_client.delete(
+            f"/app/cars/{car_id + 1}/", format="json"
+        )
+        assert response_patch_car.status_code == status.HTTP_404_NOT_FOUND
+        assert response_delete_car.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestsCommon:
