@@ -1,30 +1,3 @@
-Car_owners/static/* linguist-vendored
+Car_owners/static/** linguist-vendored
 
-Car_owners/static/admin/img/* linguist-vendored
-Car_owners/static/admin/js/* linguist-vendored
-Car_owners/static/admin/js/core.js linguist-vendored
-Car_owners/static/admin/js/inlines.js linguist-vendored
-Car_owners/static/admin/js/theme.js linguist-vendored
-Car_owners/static/admin/js/SelectBox.js linguist-vendored
-Car_owners/static/admin/js/collapse.js linguist-vendored
-Car_owners/static/admin/js/filters.js linguist-vendored
-Car_owners/static/admin/js/admin/* linguist-vendored
-Car_owners/static/admin/js/admin/RelatedObjectLookups linguist-vendored
-Car_owners/static/admin/js/vendor/* linguist-vendored
 
-Car_owners/static/drf-yasg/* linguist-vendored
-Car_owners/static/drf-yasg/insQ.js linguist-vendored
-Car_owners/static/drf-yasg/swagger-ui-init.js linguist-vendored
-Car_owners/static/drf-yasg/swagger-ui-dist/* linguist-vendored
-Car_owners/static/drf-yasg/redoc-old/* linguist-vendored
-Car_owners/static/drf-yasg/redoc/* linguist-vendored
-Car_owners/static/drf-yasg/swagger-ui-dist/* linguist-vendored
-
-Car_owners/static/gis/css/* linguist-vendored
-Car_owners/static/gis/img/* linguist-vendored
-Car_owners/static/gis/js/* linguist-vendored
-
-Car_owners/static/rest_framework/css/* linguist-vendored
-Car_owners/static/rest_framework/docs/css/* linguist-vendored
-Car_owners/static/rest_framework/fonts/* linguist-vendored
-Car_owners/static/rest_framework/js/* linguist-vendored
