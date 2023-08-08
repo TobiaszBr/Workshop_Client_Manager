@@ -386,7 +386,7 @@ COPY public.application_owner (id, name, surname, phone) FROM stdin;
 10	Mirek	Plich	888262031
 11	Jaś	Fasola	777777777
 12	Marcin	Wąs	500879693
-13	marek	cwik	564789321
+13	Marek	Cwik	564789321
 14	Konrad	Wąs	789128670
 15	Tomasz	Rydz	668951473
 16	Marta	Mucha	790452178
