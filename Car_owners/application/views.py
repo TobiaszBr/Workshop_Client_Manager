@@ -31,10 +31,12 @@ class OwnerFilter(django_filters.FilterSet):
 class CarFilter(django_filters.FilterSet):
     brand = django_filters.CharFilter(lookup_expr="iexact")
     model = django_filters.CharFilter(lookup_expr="iexact")
+    problem_description = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = Car
-        fields = ["id", "brand", "model", "production_date", "owner"]
+        fields = ["id", "brand", "model", "production_date", "problem_description",
+                  "repaired", "owner"]
 
 
 class BaseViewSet(ABC, viewsets.ModelViewSet):
@@ -209,14 +211,20 @@ class CarViewSet(BaseViewSet):
             "brand": "Car's brand",
             "model": "Car's model",
             "production_date": "Car's production date in YYYY-MM-DD format",
+            "problem_description": "Car's problem description",
+            "repaired": "Car's repair status",
             "owner": "Car owner's unique id number",
         }
         manual_parameters_list = []
         for parameter_name, description in swagger_parameters_dict.items():
-            if parameter_name not in ["id", "owner"]:
-                field_type = openapi.TYPE_STRING
-            else:
+            if parameter_name in ["id", "owner"]:
                 field_type = openapi.TYPE_INTEGER
+            elif parameter_name == "repaired":
+                field_type = openapi.TYPE_BOOLEAN
+            elif parameter_name == "total_cost":
+                field_type = openapi.TYPE_NUMBER
+            else:
+                field_type = openapi.TYPE_STRING
 
             parameter = openapi.Parameter(
                 parameter_name,
