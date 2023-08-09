@@ -29,7 +29,10 @@ CREATE TABLE public.application_car (
     brand character varying(20) NOT NULL,
     model character varying(40) NOT NULL,
     production_date date NOT NULL,
-    owner_id bigint NOT NULL
+    owner_id bigint NOT NULL,
+    problem_description text NOT NULL,
+    repaired boolean NOT NULL,
+    total_cost double precision NOT NULL
 );
 
 
@@ -352,20 +355,20 @@ ALTER TABLE public.django_session OWNER TO postgres;
 -- Data for Name: application_car; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.application_car (id, brand, model, production_date, owner_id) FROM stdin;
-1	Toyota	Celica Vi	1997-03-21	1
-2	Ford	Focus	2007-05-30	2
-3	Bmw	M5	2020-10-20	3
-4	Ferrari	F-40	1992-02-21	1
-5	Aston Martin	Db9	2021-08-21	4
-6	Dodge	Viper	2011-12-17	5
-7	Fiat	126 P	1992-04-06	6
-8	Audi	A4	2021-05-20	7
-9	Audi	A1	2021-05-20	8
-10	Skoda	Superb	2021-05-20	9
-11	VW	Golf	2023-05-23	10
-12	Mazda	RX8	2016-05-26	11
-13	Skoda	Octavia	2022-01-01	12
+COPY public.application_car (id, brand, model, production_date, owner_id, problem_description, repaired, total_cost) FROM stdin;
+1	Toyota	Celica Vi	1997-03-21	1	Weak breaks 	t	200.5
+2	Ford	Focus	2007-05-30	1	Broken windshield	f	0
+3	Bmw	M5	2020-10-20	1	The engine doesnt start	f	0
+4	Ferrari	F-40	1992-02-21	1	Steering wheel vibration while driving	f	0
+5	Aston Martin	Db9	2021-08-21	1	Weak breaks 	f	0
+6	Dodge	Viper	2011-12-17	1	Strange exhaust color	t	3250.3
+7	Fiat	126 P	1992-04-06	1	Old tires	t	750.0
+8	Audi	A4	2021-05-20	1	Engine oil loss	f	0
+9	Audi	A1	2021-05-20	1	Tire leaking air	t	230.7
+10	Skoda	Superb	2021-05-20	1	Tire leaking air	f	0
+11	VW	Golf	2023-05-23	1	Engine oil loss	t	450.8
+12	Mazda	RX8	2016-05-26	1	rusty tailgate	f	0
+13	Skoda	Octavia	2022-01-01	1	Refrigerant loss	t	310.4
 \.
 
 
@@ -456,6 +459,7 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 --
 
 COPY public.auth_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined) FROM stdin;
+1	pbkdf2_sha256$600000$6CV7PsXFjqQe9jbvdyPTxe$LPPOjdorohMEeDD5Sp2xdd+bGU9p4hofyPSVs7fjgbc=	\N	t	admin			admin@gmail.com	t	t	2023-08-09 09:56:24.424485+00
 \.
 
 
@@ -524,6 +528,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 18	auth	0011_update_proxy_permissions	2023-06-17 14:01:10.387682+00
 19	auth	0012_alter_user_first_name_max_length	2023-06-17 14:01:10.42307+00
 20	sessions	0001_initial	2023-06-17 14:01:10.559853+00
+21	application	0003_car_problem_description_car_repaired_car_total_cost	2023-08-09 09:56:22.674405+00
 \.
 
 
@@ -539,15 +544,15 @@ COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
 -- Name: application_car_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.application_car_id_seq', 14, true);
-alter sequence public.application_car_id_seq restart with 14;
+SELECT pg_catalog.setval('public.application_car_id_seq', 14, false);
+
 
 --
 -- Name: application_owner_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.application_owner_id_seq', 19, true);
-alter sequence public.application_owner_id_seq restart with 19;
+SELECT pg_catalog.setval('public.application_owner_id_seq', 19, false);
+
 
 --
 -- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
@@ -581,7 +586,7 @@ SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 1, false);
 -- Name: auth_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.auth_user_id_seq', 1, false);
+SELECT pg_catalog.setval('public.auth_user_id_seq', 1, true);
 
 
 --
@@ -609,7 +614,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 8, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 20, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 21, true);
 
 
 --
