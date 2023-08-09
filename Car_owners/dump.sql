@@ -539,15 +539,15 @@ COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
 -- Name: application_car_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.application_car_id_seq', 2, true);
-
+SELECT pg_catalog.setval('public.application_car_id_seq', 14, true);
+alter sequence public.application_car_id_seq restart with 14;
 
 --
 -- Name: application_owner_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.application_owner_id_seq', 2, true);
-
+SELECT pg_catalog.setval('public.application_owner_id_seq', 19, true);
+alter sequence public.application_owner_id_seq restart with 19;
 
 --
 -- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
