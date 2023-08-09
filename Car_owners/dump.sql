@@ -357,18 +357,18 @@ ALTER TABLE public.django_session OWNER TO postgres;
 
 COPY public.application_car (id, brand, model, production_date, owner_id, problem_description, repaired, total_cost) FROM stdin;
 1	Toyota	Celica Vi	1997-03-21	1	Weak breaks 	t	200.5
-2	Ford	Focus	2007-05-30	1	Broken windshield	f	0
-3	Bmw	M5	2020-10-20	1	The engine doesnt start	f	0
+2	Ford	Focus	2007-05-30	2	Broken windshield	f	0
+3	Bmw	M5	2020-10-20	3	The engine doesnt start	f	0
 4	Ferrari	F-40	1992-02-21	1	Steering wheel vibration while driving	f	0
-5	Aston Martin	Db9	2021-08-21	1	Weak breaks 	f	0
-6	Dodge	Viper	2011-12-17	1	Strange exhaust color	t	3250.3
-7	Fiat	126 P	1992-04-06	1	Old tires	t	750.0
-8	Audi	A4	2021-05-20	1	Engine oil loss	f	0
-9	Audi	A1	2021-05-20	1	Tire leaking air	t	230.7
-10	Skoda	Superb	2021-05-20	1	Tire leaking air	f	0
-11	VW	Golf	2023-05-23	1	Engine oil loss	t	450.8
-12	Mazda	RX8	2016-05-26	1	Rusty tailgate	f	0
-13	Skoda	Octavia	2022-01-01	1	Refrigerant loss	t	310.4
+5	Aston Martin	Db9	2021-08-21	4	Weak breaks 	f	0
+6	Dodge	Viper	2011-12-17	4	Strange exhaust color	t	3250.3
+7	Fiat	126 P	1992-04-06	5	Old tires	t	750.0
+8	Audi	A4	2021-05-20	6	Engine oil loss	f	0
+9	Audi	A1	2021-05-20	7	Tire leaking air	t	230.7
+10	Skoda	Superb	2021-05-20	8	Tire leaking air	f	0
+11	VW	Golf	2023-05-23	9	Engine oil loss	t	450.8
+12	Mazda	RX8	2016-05-26	10	Rusty tailgate	f	0
+13	Skoda	Octavia	2022-01-01	11	Refrigerant loss	t	310.4
 \.
 
 
