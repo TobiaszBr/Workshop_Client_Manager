@@ -367,7 +367,7 @@ COPY public.application_car (id, brand, model, production_date, owner_id, proble
 9	Audi	A1	2021-05-20	1	Tire leaking air	t	230.7
 10	Skoda	Superb	2021-05-20	1	Tire leaking air	f	0
 11	VW	Golf	2023-05-23	1	Engine oil loss	t	450.8
-12	Mazda	RX8	2016-05-26	1	rusty tailgate	f	0
+12	Mazda	RX8	2016-05-26	1	Rusty tailgate	f	0
 13	Skoda	Octavia	2022-01-01	1	Refrigerant loss	t	310.4
 \.
 

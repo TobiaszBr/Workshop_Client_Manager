@@ -43,10 +43,15 @@ class CarSerializer(serializers.ModelSerializer):
 
     def validate(self, data: collections.OrderedDict) -> collections.OrderedDict:
         """
-        Checks that production date is not from the future.
+        Checks that production date is not from the future and total cost is not
+        negative.
         """
         if data.get("production_date", datetime.date.today()) > datetime.date.today():
             raise serializers.ValidationError(
                 {"production_date": "Production date cannot be from the future."}
+            )
+        elif data.get("total_cost", 1) < 0:
+            raise serializers.ValidationError(
+                {"total_cost": "Total cost cannot be negative."}
             )
         return data
