@@ -62,14 +62,38 @@ def test_car_serializer_validate_function_valid_data(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("car_serializer_data", "error_message"),
+    [
+        (
+            {
+                "brand": "Ford",
+                "model": "Focus",
+                "production_date": datetime.date.today() + datetime.timedelta(days=1),
+                "problem_description": "Weak breaks",
+                "repaired": False,
+                "total_cost": 290.6,
+                "owner": 1,
+            },
+            "Production date cannot be from the future.",
+        ),
+        (
+            {
+                "brand": "Ford",
+                "model": "Focus",
+                "production_date": datetime.date.today(),
+                "problem_description": "Weak breaks",
+                "repaired": False,
+                "total_cost": -290.6,
+                "owner": 1,
+            },
+            "Total cost cannot be negative.",
+        ),
+    ],
+)
 def test_car_serializer_validate_function_error_with_message(
-    valid_car_serializer_data: dict[str, str | datetime.date | Owner]
+    car_serializer_data: dict[str, str | datetime.date | Owner], error_message: str
 ) -> None:
-    with pytest.raises(
-        serializers.ValidationError, match="Production date cannot be from the future."
-    ):
-        valid_car_serializer_data[
-            "production_date"
-        ] = datetime.date.today() + datetime.timedelta(days=1)
-        car_serializer = CarSerializer(data=valid_car_serializer_data)
-        car_serializer.validate(valid_car_serializer_data)
+    with pytest.raises(serializers.ValidationError, match=error_message):
+        car_serializer = CarSerializer(data=car_serializer_data)
+        car_serializer.validate(car_serializer_data)

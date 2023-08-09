@@ -221,8 +221,6 @@ class CarViewSet(BaseViewSet):
                 field_type = openapi.TYPE_INTEGER
             elif parameter_name == "repaired":
                 field_type = openapi.TYPE_BOOLEAN
-            elif parameter_name == "total_cost":
-                field_type = openapi.TYPE_NUMBER
             else:
                 field_type = openapi.TYPE_STRING
 

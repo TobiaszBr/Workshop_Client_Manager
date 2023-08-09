@@ -30,6 +30,9 @@ def valid_car_serializer_data(
         "brand": "Ford",
         "model": "Focus",
         "production_date": datetime.date.today(),
+        "problem_description": "Weak breaks",
+        "repaired": False,
+        "total_cost": 290.6,
         "owner": valid_owner_model_data,
     }
 
@@ -54,6 +57,9 @@ def valid_car_view_data(valid_owner_model_data: Owner) -> dict[str, str | int]:
         "brand": "Ford",
         "model": "Mondeo",
         "production_date": "2023-01-01",
+        "problem_description": "Weak breaks",
+        "repaired": False,
+        "total_cost": 384.2,
         "owner": owner_id,
     }
 
@@ -67,6 +73,9 @@ def valid_new_car_view_data(valid_owner_model_data: Owner) -> dict[str, str | in
         "brand": "Skoda",
         "model": "Superb",
         "production_date": "2023-05-20",
+        "problem_description": "Engine start problem",
+        "repaired": True,
+        "total_cost": 900.3,
         "owner": owner_id,
     }
 
