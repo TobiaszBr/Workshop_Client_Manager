@@ -14,6 +14,8 @@ from .decortors import swagger_decorator_owner, swagger_decorator_car
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
 
+from rest_framework.decorators import action
+
 
 request_type = Request
 response_type = Response
@@ -240,3 +242,12 @@ class CarViewSet(BaseViewSet):
     @swagger_auto_schema(**get_swagger_parameters())
     def list(self, request: request_type, *args, **kwargs) -> response_type:
         return super().list(request, *args, **kwargs)
+
+
+    @action(detail=False, methods=["GET"], name="report")
+    def unrepaired(self, request, *args, **kwargs):
+
+        queryset = Car.objects.filter(repaired=False)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
