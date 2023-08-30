@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import datetime
-from typing import Type, List
+from typing import Type
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
@@ -54,6 +54,7 @@ class BaseViewSet(ABC, viewsets.ModelViewSet):
 
         self.model_class = None
         self.model_class_name = None
+        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     @abstractmethod
     def request_validation(self, request: request_type):
@@ -99,7 +100,6 @@ class OwnerViewSet(BaseViewSet):
         self.ordering_fields = ["name", "surname"]
         self.model_class = Owner
         self.model_class_name = self.model_class._meta.object_name
-        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     def request_validation(self, request: request_type) -> response_type:
         for key, value in request.query_params.items():
@@ -187,13 +187,6 @@ class CarViewSet(BaseViewSet):
         self.model_class_name = self.model_class._meta.object_name
 
     @property
-    def filter_backends(
-        self,
-    ) -> List[Type[DjangoFilterBackend] | OrderingFilter] | None:
-        if self.action == "list":
-            return [DjangoFilterBackend, OrderingFilter]
-
-    @property
     def filterset_class(self) -> Type[CarFilter] | None:
         if self.action == "list":
             return CarFilter
@@ -261,12 +254,16 @@ class CarViewSet(BaseViewSet):
     def list(self, request: request_type, *args, **kwargs) -> response_type:
         return super().list(request, *args, **kwargs)
 
-    @action(detail=False, name="report")
+    @action(detail=False, name="unrepaired")
     def unrepaired(self, request, *args, **kwargs):
         """
         Endpoint listed all unrepaired cars.
         """
-        queryset = Car.objects.filter(repaired=False)
+        # Additional request validation
+        if response := self.request_validation(request):
+            return response
 
+        queryset = self.filter_queryset(Car.objects.filter(repaired=False))
         serializer = self.get_serializer(queryset, many=True)
+
         return Response(serializer.data)
