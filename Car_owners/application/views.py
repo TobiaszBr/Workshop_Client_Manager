@@ -41,6 +41,9 @@ class CarFilter(django_filters.FilterSet):
                   "repaired", "owner"]
 
 
+class CarReportFilter(django_filters.FilterSet):
+    pass
+
 class BaseViewSet(ABC, viewsets.ModelViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -175,10 +178,15 @@ class CarViewSet(BaseViewSet):
 
         self.queryset = Car.objects.all()
         self.serializer_class = CarSerializer
-        self.filterset_class = CarFilter
+        #self.filterset_class = CarFilter #CarReportFilter
         self.ordering_fields = ["brand", "model", "production_date"]
         self.model_class = Car
         self.model_class_name = self.model_class._meta.object_name
+
+    @property
+    def filterset_class(self):
+        if self.action == "list":
+            return CarFilter
 
     def request_validation(self, request: request_type) -> response_type:
         for key, value in request.query_params.items():
@@ -243,10 +251,8 @@ class CarViewSet(BaseViewSet):
     def list(self, request: request_type, *args, **kwargs) -> response_type:
         return super().list(request, *args, **kwargs)
 
-
-    @action(detail=False, methods=["GET"], name="report")
+    @action(detail=False, name="report")
     def unrepaired(self, request, *args, **kwargs):
-
         queryset = Car.objects.filter(repaired=False)
 
         serializer = self.get_serializer(queryset, many=True)
