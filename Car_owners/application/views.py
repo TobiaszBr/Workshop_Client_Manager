@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import datetime
+from typing import Type, List
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
@@ -7,14 +8,13 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from re import search
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from .decortors import swagger_decorator_owner, swagger_decorator_car
 from .models import Owner, Car
 from .serializers import OwnerSerializer, CarSerializer
-
-from rest_framework.decorators import action
 
 
 request_type = Request
@@ -37,18 +37,21 @@ class CarFilter(django_filters.FilterSet):
 
     class Meta:
         model = Car
-        fields = ["id", "brand", "model", "production_date", "problem_description",
-                  "repaired", "owner"]
+        fields = [
+            "id",
+            "brand",
+            "model",
+            "production_date",
+            "problem_description",
+            "repaired",
+            "owner",
+        ]
 
-
-class CarReportFilter(django_filters.FilterSet):
-    pass
 
 class BaseViewSet(ABC, viewsets.ModelViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
         self.model_class = None
         self.model_class_name = None
 
@@ -96,6 +99,7 @@ class OwnerViewSet(BaseViewSet):
         self.ordering_fields = ["name", "surname"]
         self.model_class = Owner
         self.model_class_name = self.model_class._meta.object_name
+        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     def request_validation(self, request: request_type) -> response_type:
         for key, value in request.query_params.items():
@@ -178,13 +182,19 @@ class CarViewSet(BaseViewSet):
 
         self.queryset = Car.objects.all()
         self.serializer_class = CarSerializer
-        #self.filterset_class = CarFilter #CarReportFilter
         self.ordering_fields = ["brand", "model", "production_date"]
         self.model_class = Car
         self.model_class_name = self.model_class._meta.object_name
 
     @property
-    def filterset_class(self):
+    def filter_backends(
+        self,
+    ) -> List[Type[DjangoFilterBackend] | OrderingFilter] | None:
+        if self.action == "list":
+            return [DjangoFilterBackend, OrderingFilter]
+
+    @property
+    def filterset_class(self) -> Type[CarFilter] | None:
         if self.action == "list":
             return CarFilter
 
@@ -253,6 +263,9 @@ class CarViewSet(BaseViewSet):
 
     @action(detail=False, name="report")
     def unrepaired(self, request, *args, **kwargs):
+        """
+        Endpoint listed all unrepaired cars.
+        """
         queryset = Car.objects.filter(repaired=False)
 
         serializer = self.get_serializer(queryset, many=True)
