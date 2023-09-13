@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import datetime
+from typing import Type
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
@@ -7,6 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from re import search
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
@@ -31,19 +33,28 @@ class OwnerFilter(django_filters.FilterSet):
 class CarFilter(django_filters.FilterSet):
     brand = django_filters.CharFilter(lookup_expr="iexact")
     model = django_filters.CharFilter(lookup_expr="iexact")
+    problem_description = django_filters.CharFilter(lookup_expr="icontains")
 
     class Meta:
         model = Car
-        fields = ["id", "brand", "model", "production_date", "owner"]
+        fields = [
+            "id",
+            "brand",
+            "model",
+            "production_date",
+            "problem_description",
+            "repaired",
+            "owner",
+        ]
 
 
 class BaseViewSet(ABC, viewsets.ModelViewSet):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
         self.model_class = None
         self.model_class_name = None
+        self.filter_backends = [DjangoFilterBackend, OrderingFilter]
 
     @abstractmethod
     def request_validation(self, request: request_type):
@@ -171,10 +182,14 @@ class CarViewSet(BaseViewSet):
 
         self.queryset = Car.objects.all()
         self.serializer_class = CarSerializer
-        self.filterset_class = CarFilter
         self.ordering_fields = ["brand", "model", "production_date"]
         self.model_class = Car
         self.model_class_name = self.model_class._meta.object_name
+
+    @property
+    def filterset_class(self) -> Type[CarFilter] | None:
+        if self.action == "list":
+            return CarFilter
 
     def request_validation(self, request: request_type) -> response_type:
         for key, value in request.query_params.items():
@@ -209,14 +224,18 @@ class CarViewSet(BaseViewSet):
             "brand": "Car's brand",
             "model": "Car's model",
             "production_date": "Car's production date in YYYY-MM-DD format",
+            "problem_description": "Car's problem description",
+            "repaired": "Car's repair status",
             "owner": "Car owner's unique id number",
         }
         manual_parameters_list = []
         for parameter_name, description in swagger_parameters_dict.items():
-            if parameter_name not in ["id", "owner"]:
-                field_type = openapi.TYPE_STRING
-            else:
+            if parameter_name in ["id", "owner"]:
                 field_type = openapi.TYPE_INTEGER
+            elif parameter_name == "repaired":
+                field_type = openapi.TYPE_BOOLEAN
+            else:
+                field_type = openapi.TYPE_STRING
 
             parameter = openapi.Parameter(
                 parameter_name,
@@ -234,3 +253,17 @@ class CarViewSet(BaseViewSet):
     @swagger_auto_schema(**get_swagger_parameters())
     def list(self, request: request_type, *args, **kwargs) -> response_type:
         return super().list(request, *args, **kwargs)
+
+    @action(detail=False, name="unrepaired")
+    def unrepaired(self, request, *args, **kwargs):
+        """
+        Endpoint listed all unrepaired cars.
+        """
+        # Additional request validation
+        if response := self.request_validation(request):
+            return response
+
+        queryset = self.filter_queryset(Car.objects.filter(repaired=False))
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data)

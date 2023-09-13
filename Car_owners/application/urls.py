@@ -9,9 +9,10 @@ from . import views
 # Schema view for swagger
 schema_view = get_schema_view(
    openapi.Info(
-      title="Car owners API",
+      title="Workshop’s customers Management",
       default_version='v1',
-      description="API allows to create, edit, delete, list and search owners and their cars.",
+      description="Application for Workshop’s customers Management – allows adding new "
+                  "customers and their’ cars with failure description.",
       contact=openapi.Contact(email="tobiasz_bernacki@onet.pl"),
       license=openapi.License(name="GNU License"),
    ),
