@@ -13,3 +13,7 @@ or
 
 2. Open API Root view based on django-rest-framework:
 `http://localhost:8000/app/`
+
+3. To run tests and check coverage, enter to the running app container with 
+`docker exec -it <container_id> /bin/sh` and run the following comand 
+`coverage run -m pytest && coverage report && coverage html`
