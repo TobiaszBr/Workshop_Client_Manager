@@ -1,4 +1,7 @@
-# Car owners API
+# Workshop Client Manager
+Application for Workshop’s customers Management – allows adding
+new customers and their’ cars with failure description and status of
+repairment.
 
 ## How to run locally
 - To run that application properly, installed Docker is required
